@@ -1,0 +1,164 @@
+/*
+ * Document A4 imprimable — cotes relevées sur la facture d'origine (en mm).
+ * Les marges écran (padding de .page) sont identiques aux marges d'impression (@page)
+ * pour que l'aperçu corresponde exactement au PDF.
+ */
+@page {
+  size: A4;
+  margin: 12mm 12mm 12mm 11mm;
+}
+
+.page {
+  position: relative;
+  box-sizing: border-box;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 12mm 12mm 12mm 11mm;
+  background: #fff;
+  color: #000;
+  font-family: "Times New Roman", "Liberation Serif", Tinos, Times, serif;
+  font-size: 10.5pt;
+  line-height: 1.2;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.page *, .page *::before, .page *::after { box-sizing: border-box; }
+.page .gris-clair { background: #d9d9d9; }
+.page .gris { background: #a6a6a6; }
+
+/* ---------- En-tête */
+.page .entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6mm;
+  margin-top: 14mm;
+  min-height: 30mm;
+}
+.page .societe {
+  margin-left: 1.3mm;
+  max-width: 88mm;
+  font-size: 10pt;
+  line-height: 1.2;
+}
+.page .societe .logo { height: 16mm; margin-bottom: 1.5mm; }
+.page .societe .logo img { max-height: 16mm; max-width: 60mm; object-fit: contain; }
+.page .societe .nom { font-size: 12pt; font-weight: bold; line-height: 1.15; }
+
+.page .cadre-client {
+  flex: none;
+  width: 95mm;
+  min-height: 23.5mm;
+  margin-top: 2.5mm;
+  padding: 1mm 1.2mm;
+  border: 1px solid #000;
+  font-size: 12pt;
+  line-height: 1.15;
+}
+.page .cadre-client .ligne { display: flex; }
+.page .cadre-client .lib { flex: none; width: 21mm; }
+.page .cadre-client .val { overflow-wrap: anywhere; }
+
+/* ---------- Bandeau titre + références */
+.page table { border-collapse: collapse; }
+.page table.bandeau { width: 100%; margin-top: 18mm; }
+.page table.bandeau td { border: 1px solid #000; }
+.page table.bandeau .titre {
+  height: 6mm;
+  padding: 0;
+  text-align: center;
+  font-size: 14pt;
+  font-weight: bold;
+  line-height: 6mm;
+  letter-spacing: 0.2pt;
+}
+.page table.bandeau .ref {
+  height: 9.4mm;
+  padding: 0 1mm 0.4mm;
+  vertical-align: bottom;
+  font-size: 12pt;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.page table.bandeau .num-doc { width: 47.5mm; }
+.page table.bandeau .date-doc { width: 73mm; }
+.page table.bandeau .bl-doc { padding-left: 1.3mm; }
+
+/* ---------- Tableau des lignes */
+.page table.lignes {
+  width: 100%;
+  margin-top: 2.8mm;
+  table-layout: fixed;
+  border: 1px solid #000;
+}
+.page table.lignes th {
+  height: 8.7mm;
+  padding: 0 1mm;
+  border: 1px solid #000;
+  text-align: center;
+  font-size: 9pt;
+  font-weight: bold;
+}
+.page table.lignes td {
+  padding: 0.6mm 1.2mm 0.8mm;
+  border-left: 1px solid #000;
+  border-right: 1px solid #000;
+  vertical-align: top;
+}
+.page table.lignes td.num { text-align: right; font-size: 10pt; white-space: nowrap; }
+.page table.lignes td.centre { text-align: center; }
+.page table.lignes tr.article + tr.article td { padding-top: 3mm; }
+.page table.lignes tr.remplissage td { padding: 0; }
+.page table.lignes td.des { overflow-wrap: anywhere; }
+
+.page td.des > div { line-height: 4.43mm; } /* pas de ligne mesuré sur le modèle */
+.page .d-titre { font-size: 11pt; text-decoration: underline; }
+.page .d-section { font-size: 9pt; font-weight: bold; margin-top: 0.2mm; }
+.page .d-item { padding-left: 3.5mm; font-size: 11pt; }
+.page .d-vide { height: 2mm; }
+
+/* ---------- Pied : note + totaux */
+.page .pied {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6mm;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.page .pied-gauche { flex: 1; min-width: 0; }
+.page .pied-droite { flex: none; width: 56mm; }
+.page .nb { font-size: 10pt; line-height: 1.15; }
+.page .nb-lib { font-size: 9pt; }
+.page .nb-entete { font-weight: bold; text-decoration: underline; line-height: 1.05; }
+.page .nb-titre { font-size: 12pt; }
+
+.page table.totaux { width: 100%; margin-top: -1px; font-size: 9.5pt; }
+.page table.totaux td { height: 5.2mm; padding: 0 1.2mm; border: 1px solid #000; }
+.page table.totaux td.lib { text-align: center; }
+.page table.totaux td.val { width: 23mm; text-align: right; white-space: nowrap; }
+.page table.totaux tr.net td { font-weight: bold; }
+
+.page .lettres { margin-top: 4mm; font-size: 10.5pt; line-height: 1.25; }
+
+/* ---------- Cachet (sous les totaux, comme sur le modèle) */
+.page .zone-cachet {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  left: -11mm; /* centre du cachet à ~159 mm du bord, comme sur le modèle */
+  min-height: 45mm;
+  margin-top: 5mm;
+}
+.page .zone-cachet img { max-width: 50mm; max-height: 45mm; object-fit: contain; align-self: flex-start; }
+
+@media print {
+  .page {
+    width: auto;
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+    box-shadow: none !important;
+  }
+  .page table.lignes thead { display: table-header-group; }
+}

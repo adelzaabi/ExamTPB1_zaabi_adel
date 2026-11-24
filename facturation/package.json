@@ -1,0 +1,9 @@
+{
+  "name": "facturation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Factures proforma, devis et factures au format tunisien (HTML/JS, sans dépendance)",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  }
+}
