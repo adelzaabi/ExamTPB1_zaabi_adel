@@ -54,8 +54,12 @@
     return h;
   }
 
+  /** Options d'affichage ; la colonne quantité apparaît d'office dès qu'une quantité n'est pas 1. */
   function options(doc) {
-    return Object.assign({}, OPTIONS_DEFAUT, doc.options || {});
+    const o = Object.assign({}, OPTIONS_DEFAUT, doc.options || {});
+    const qteDe = (l) => C.lireNombre(l.qte === undefined || l.qte === '' ? 1 : l.qte);
+    if (!o.qte && (doc.lignes || []).some((l) => qteDe(l) !== 1)) o.qte = true;
+    return o;
   }
 
   function totauxDocument(doc, parametres) {
@@ -229,5 +233,5 @@
     return [t.libelle, num, client].filter(Boolean).join(' - ');
   }
 
-  return { TYPES, OPTIONS_DEFAUT, esc, rendreDesignation, rendreDocument, totauxDocument, ajusterRemplissage, nomFichier };
+  return { TYPES, OPTIONS_DEFAUT, optionsEffectives: options, esc, rendreDesignation, rendreDocument, totauxDocument, ajusterRemplissage, nomFichier };
 });

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Facturation — proformas, devis et factures</title>
+  <title>Facturier</title>
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="css/facture.css">
 </head>
@@ -11,85 +11,92 @@
   <header class="barre">
     <div class="marque">
       <span class="logo-app" aria-hidden="true">F</span>
-      <div>
-        <div class="nom-app">Facturation</div>
+      <div class="marque-texte">
+        <div class="nom-app">Facturier <span id="etat-doc" class="etat"></span></div>
         <div id="titre-doc" class="titre-doc"></div>
       </div>
-      <span id="etat-doc" class="etat"></span>
     </div>
     <div class="actions">
-      <div class="groupe">
+      <div class="groupe" role="group" aria-label="Nouveau document">
         <select id="nouveau-type" aria-label="Type du nouveau document">
           <option value="proforma">Facture proforma</option>
           <option value="facture">Facture</option>
           <option value="devis">Devis</option>
         </select>
-        <button type="button" data-action="nouveau">Nouveau</button>
+        <button type="button" data-action="nouveau">+ Nouveau</button>
       </div>
-      <button type="button" data-action="dupliquer" title="Copier ce document avec un nouveau numéro">Dupliquer</button>
-      <button type="button" data-action="convertir" title="Créer une facture définitive à partir de ce document">Convertir en facture</button>
+      <button type="button" data-action="convertir" title="Créer la facture définitive à partir de cette proforma ou de ce devis">Convertir en facture</button>
+      <button type="button" data-action="dupliquer" title="Copier ce document avec un nouveau numéro">Copier</button>
       <button type="button" data-action="enregistrer" class="secondaire" title="Ctrl+S">Enregistrer</button>
-      <button type="button" data-action="imprimer" class="primaire" title="Imprimer ou enregistrer en PDF">Imprimer / PDF</button>
+      <button type="button" data-action="imprimer" title="Ouvrir la fenêtre d'impression">Imprimer</button>
+      <button type="button" data-action="pdf" class="primaire" title="Enregistre le document et télécharge le PDF">Télécharger le PDF</button>
     </div>
   </header>
 
-  <div id="alerte-stockage" class="alerte" hidden>
-    Le navigateur bloque l'enregistrement local : vos données seront perdues à la fermeture.
-    Utilisez « Exporter une sauvegarde » (onglet Historique).
-  </div>
+  <div id="alerte-stockage" class="alerte" hidden></div>
 
   <main class="espace">
     <section class="editeur" aria-label="Saisie">
       <nav class="onglets" role="tablist">
-        <button type="button" class="actif" data-onglet="document">Document</button>
-        <button type="button" data-onglet="clients">Clients</button>
-        <button type="button" data-onglet="catalogue">Catalogue</button>
-        <button type="button" data-onglet="historique">Historique</button>
-        <button type="button" data-onglet="parametres">Paramètres</button>
+        <button type="button" class="actif" data-onglet="document" role="tab" aria-selected="true">Document</button>
+        <button type="button" data-onglet="clients" role="tab" aria-selected="false">Clients</button>
+        <button type="button" data-onglet="catalogue" role="tab" aria-selected="false">Catalogue</button>
+        <button type="button" data-onglet="historique" role="tab" aria-selected="false">Historique</button>
+        <button type="button" data-onglet="parametres" role="tab" aria-selected="false">Ma société</button>
       </nav>
 
       <!-- ============ DOCUMENT ============ -->
-      <div class="panneau actif" id="onglet-document">
+      <div class="panneau actif" id="onglet-document" role="tabpanel">
+        <div id="guide" class="guide" hidden>
+          <strong>Trois étapes</strong>
+          <ol>
+            <li><a href="#" data-aller="parametres">Renseignez votre société</a> (nom, matricule fiscal, cachet) : une seule fois.</li>
+            <li>Choisissez le client et ajoutez les lignes ci-dessous. Les totaux se calculent seuls.</li>
+            <li>Cliquez sur <b>Télécharger le PDF</b> : le document est numéroté, enregistré et prêt à envoyer.</li>
+          </ol>
+          <button type="button" class="petit" data-action="masquer-guide">J'ai compris</button>
+        </div>
+
         <fieldset>
           <legend>Document</legend>
           <div class="grille-2">
             <label>Type
-              <select data-champ="type">
+              <select id="doc-type" data-champ="type">
                 <option value="proforma">Facture proforma</option>
                 <option value="facture">Facture</option>
                 <option value="devis">Devis</option>
               </select>
             </label>
             <label>Date
-              <input type="date" data-champ="date">
+              <input id="doc-date" type="date" data-champ="date">
             </label>
             <label>Numéro
               <span class="avec-bouton">
-                <input data-champ="numero" autocomplete="off">
-                <button type="button" data-action="numero-auto" title="Reprendre le numéro automatique">↻</button>
+                <input id="doc-numero" data-champ="numero" autocomplete="off">
+                <button type="button" data-action="numero-auto" title="Reprendre le numéro automatique" aria-label="Reprendre le numéro automatique">↻</button>
               </span>
             </label>
             <label>Bon de livraison
-              <input data-champ="bonLivraison" autocomplete="off">
+              <input id="doc-bl" data-champ="bonLivraison" autocomplete="off" placeholder="facultatif">
             </label>
           </div>
         </fieldset>
 
         <fieldset>
           <legend>Client</legend>
-          <label>Client enregistré
+          <label>Client déjà enregistré
             <select id="choix-client"></select>
           </label>
           <div class="grille-2">
-            <label>Code<input data-champ="client.code" autocomplete="off"></label>
-            <label>Nom / raison sociale<input data-champ="client.nom" autocomplete="off"></label>
-            <label class="large">Adresse<input data-champ="client.adresse" autocomplete="off"></label>
+            <label>Code<input id="doc-client-code" data-champ="client.code" autocomplete="off" placeholder="auto"></label>
+            <label>Nom / raison sociale<input id="doc-client-nom" data-champ="client.nom" autocomplete="off"></label>
+            <label class="large">Adresse<input id="doc-client-adresse" data-champ="client.adresse" autocomplete="off"></label>
             <label class="large">Code TVA (matricule fiscal)
-              <input data-champ="client.mf" data-mf placeholder="1234567/A/A/M/000" autocomplete="off">
+              <input id="doc-client-mf" data-champ="client.mf" data-mf placeholder="vide pour un particulier" autocomplete="off">
               <small class="message-mf"></small>
             </label>
           </div>
-          <button type="button" data-action="memoriser-client">Enregistrer ce client dans la liste</button>
+          <button type="button" data-action="memoriser-client">Enregistrer ce client pour la prochaine fois</button>
         </fieldset>
 
         <fieldset>
@@ -102,33 +109,33 @@
               <button type="button" data-action="ajouter-article">+ Ajouter</button>
             </span>
           </div>
-          <p class="aide">Description : une ligne qui commence par <code>#</code> devient un sous-titre en gras
-            (ex. <code># 1) : Ventes</code>) ; les autres lignes sont affichées en retrait.</p>
+          <p class="aide">Dans le détail, une ligne qui commence par <code>#</code> devient un sous-titre en gras
+            (ex. <code># 1) : Ventes</code>) ; les autres lignes s'affichent en retrait.</p>
         </fieldset>
 
         <fieldset>
           <legend>Note (NB)</legend>
-          <label>Titre de la note<input data-champ="nbTitre" placeholder="cette offre comporte"></label>
-          <label>Texte (une ligne par point)<textarea data-champ="nbTexte" rows="4"></textarea></label>
+          <label>Titre de la note<input id="doc-nb-titre" data-champ="nbTitre" placeholder="cette offre comporte"></label>
+          <label>Texte (une ligne par point)<textarea id="doc-nb-texte" data-champ="nbTexte" rows="4"></textarea></label>
         </fieldset>
 
         <fieldset>
           <legend>Affichage</legend>
           <div class="cases">
-            <label class="case"><input type="checkbox" data-champ="options.qte"> Colonne quantité</label>
-            <label class="case"><input type="checkbox" data-champ="options.remise"> Colonne remise</label>
-            <label class="case"><input type="checkbox" data-champ="options.ttc"> Total TTC</label>
-            <label class="case"><input type="checkbox" data-champ="options.lettres"> Montant en lettres</label>
-            <label class="case"><input type="checkbox" data-champ="options.timbre"> Timbre fiscal</label>
-            <label class="case"><input type="checkbox" data-champ="options.cachet"> Cachet</label>
+            <label class="case"><input id="opt-ttc" type="checkbox" data-champ="options.ttc"> Total TTC</label>
+            <label class="case"><input id="opt-lettres" type="checkbox" data-champ="options.lettres"> Montant en lettres</label>
+            <label class="case"><input id="opt-timbre" type="checkbox" data-champ="options.timbre"> Timbre fiscal</label>
+            <label class="case"><input id="opt-cachet" type="checkbox" data-champ="options.cachet"> Cachet</label>
+            <label class="case"><input id="opt-qte" type="checkbox" data-champ="options.qte"> Colonne quantité</label>
+            <label class="case"><input id="opt-remise" type="checkbox" data-champ="options.remise"> Colonne remise</label>
           </div>
         </fieldset>
 
-        <div id="resume-totaux" class="resume"></div>
+        <div id="resume-totaux" class="resume" aria-live="polite"></div>
       </div>
 
       <!-- ============ CLIENTS ============ -->
-      <div class="panneau" id="onglet-clients">
+      <div class="panneau" id="onglet-clients" role="tabpanel">
         <fieldset>
           <legend id="titre-form-client">Nouveau client</legend>
           <input type="hidden" id="cl-id">
@@ -140,125 +147,148 @@
             <label>Téléphone<input id="cl-tel" autocomplete="off"></label>
           </div>
           <div class="boutons">
-            <button type="button" class="secondaire" data-action="client-enregistrer">Enregistrer</button>
+            <button type="button" class="secondaire" data-action="client-enregistrer">Enregistrer le client</button>
             <button type="button" data-action="client-vider">Vider</button>
           </div>
         </fieldset>
-        <input type="search" id="filtre-clients" class="recherche" placeholder="Rechercher un client…">
+        <input type="search" id="filtre-clients" class="recherche" placeholder="Rechercher un client…" aria-label="Rechercher un client">
         <div id="table-clients"></div>
       </div>
 
       <!-- ============ CATALOGUE ============ -->
-      <div class="panneau" id="onglet-catalogue">
+      <div class="panneau" id="onglet-catalogue" role="tabpanel">
         <fieldset>
-          <legend id="titre-form-article">Nouvel article / service</legend>
+          <legend id="titre-form-article">Nouvel article ou service</legend>
           <input type="hidden" id="ar-id">
           <div class="grille-2">
             <label>Référence<input id="ar-ref" autocomplete="off"></label>
             <label>Titre<input id="ar-titre" autocomplete="off"></label>
-            <label class="large">Description<textarea id="ar-description" rows="6"></textarea></label>
+            <label class="large">Détail<textarea id="ar-description" rows="6"></textarea></label>
             <label>Prix HT<input id="ar-prix" inputmode="decimal" autocomplete="off"></label>
             <label>TVA<select id="ar-tva"></select></label>
           </div>
           <div class="boutons">
-            <button type="button" class="secondaire" data-action="article-enregistrer">Enregistrer</button>
+            <button type="button" class="secondaire" data-action="article-enregistrer">Enregistrer l'article</button>
             <button type="button" data-action="article-vider">Vider</button>
           </div>
         </fieldset>
-        <input type="search" id="filtre-articles" class="recherche" placeholder="Rechercher un article…">
+        <input type="search" id="filtre-articles" class="recherche" placeholder="Rechercher un article…" aria-label="Rechercher un article">
         <div id="table-articles"></div>
       </div>
 
       <!-- ============ HISTORIQUE ============ -->
-      <div class="panneau" id="onglet-historique">
-        <div class="boutons">
-          <button type="button" data-action="exporter">Exporter une sauvegarde</button>
-          <button type="button" data-action="importer">Importer une sauvegarde</button>
-        </div>
-        <input type="search" id="filtre-documents" class="recherche" placeholder="Rechercher (numéro, client, type)…">
+      <div class="panneau" id="onglet-historique" role="tabpanel">
+        <input type="search" id="filtre-documents" class="recherche" placeholder="Rechercher (numéro, client, type)…" aria-label="Rechercher un document">
         <div id="table-documents"></div>
+        <fieldset class="sauvegarde">
+          <legend>Sauvegarde</legend>
+          <p class="aide">Un fichier de sauvegarde contient la société, les clients, le catalogue et tous les documents.</p>
+          <div class="boutons">
+            <button type="button" data-action="exporter">Exporter une sauvegarde</button>
+            <button type="button" data-action="importer">Importer une sauvegarde</button>
+          </div>
+        </fieldset>
       </div>
 
-      <!-- ============ PARAMÈTRES ============ -->
-      <div class="panneau" id="onglet-parametres">
+      <!-- ============ MA SOCIÉTÉ ============ -->
+      <div class="panneau" id="onglet-parametres" role="tabpanel">
         <fieldset>
-          <legend>Société émettrice</legend>
+          <legend>Votre société</legend>
           <div class="grille-2">
-            <label class="large">Raison sociale<input data-param="societe.nom" autocomplete="off"></label>
-            <label class="large">Adresse<textarea data-param="societe.adresse" rows="2"></textarea></label>
-            <label>Matricule fiscal (TVA)<input data-param="societe.mf" data-mf autocomplete="off"><small class="message-mf"></small></label>
-            <label>Registre de commerce (RC)<input data-param="societe.rc" autocomplete="off"></label>
-            <label>Téléphone<input data-param="societe.tel" autocomplete="off"></label>
-            <label>Email<input data-param="societe.email" autocomplete="off"></label>
-            <label class="large">RIB (facultatif)<input data-param="societe.rib" autocomplete="off"></label>
+            <label class="large">Raison sociale<input id="p-nom" data-param="societe.nom" autocomplete="off"></label>
+            <label class="large">Adresse<textarea id="p-adresse" data-param="societe.adresse" rows="2"></textarea></label>
+            <label>Matricule fiscal (TVA)<input id="p-mf" data-param="societe.mf" data-mf autocomplete="off" placeholder="1234567/A/A/M/000"><small class="message-mf"></small></label>
+            <label>Registre de commerce (RC)<input id="p-rc" data-param="societe.rc" autocomplete="off"></label>
+            <label>Téléphone<input id="p-tel" data-param="societe.tel" autocomplete="off"></label>
+            <label>Email<input id="p-email" data-param="societe.email" autocomplete="off"></label>
+            <label class="large">RIB (facultatif)<input id="p-rib" data-param="societe.rib" autocomplete="off"></label>
           </div>
           <div class="images">
             <div class="bloc-image">
-              <span>Logo</span>
+              <span>Logo (facultatif)</span>
               <div class="vignette" id="vignette-logo"></div>
-              <input type="file" accept="image/*" data-image="logo">
-              <button type="button" data-action="image-supprimer" data-image="logo">Retirer</button>
+              <input id="p-logo" type="file" accept="image/png,image/jpeg" data-image="logo" aria-label="Choisir le logo">
+              <button type="button" class="petit" data-action="image-supprimer" data-image="logo">Retirer le logo</button>
             </div>
             <div class="bloc-image">
-              <span>Cachet / signature (PNG transparent conseillé)</span>
+              <span>Cachet / signature (photo ou scan, PNG à fond transparent idéal)</span>
               <div class="vignette" id="vignette-cachet"></div>
-              <input type="file" accept="image/*" data-image="cachet">
-              <button type="button" data-action="image-supprimer" data-image="cachet">Retirer</button>
+              <input id="p-cachet" type="file" accept="image/png,image/jpeg" data-image="cachet" aria-label="Choisir le cachet">
+              <button type="button" class="petit" data-action="image-supprimer" data-image="cachet">Retirer le cachet</button>
             </div>
           </div>
         </fieldset>
 
         <fieldset>
           <legend>Numérotation</legend>
-          <p class="aide">Jetons : <code>{AAAA}</code> année, <code>{AA}</code> année sur 2 chiffres, <code>{MM}</code> mois,
-            <code>{N:4}</code> numéro sur 4 chiffres. Exemple : <code>{AA}{N:4}/{AA}</code> → 260019/26.</p>
-          <div class="grille-3">
-            <label>Modèle proforma<input data-param="modeles.proforma"></label>
-            <label>Modèle facture<input data-param="modeles.facture"></label>
-            <label>Modèle devis<input data-param="modeles.devis"></label>
-          </div>
           <p class="aide" id="libelle-compteurs"></p>
           <div class="grille-3">
-            <label>Proformas<input type="number" min="0" step="1" data-compteur="proforma"></label>
-            <label>Factures<input type="number" min="0" step="1" data-compteur="facture"></label>
-            <label>Devis<input type="number" min="0" step="1" data-compteur="devis"></label>
+            <label>Proformas<input id="p-cpt-proforma" type="number" min="0" step="1" data-compteur="proforma"></label>
+            <label>Factures<input id="p-cpt-facture" type="number" min="0" step="1" data-compteur="facture"></label>
+            <label>Devis<input id="p-cpt-devis" type="number" min="0" step="1" data-compteur="devis"></label>
           </div>
+          <details>
+            <summary>Format des numéros</summary>
+            <p class="aide">Jetons : <code>{AAAA}</code> année, <code>{AA}</code> année sur 2 chiffres, <code>{MM}</code> mois,
+              <code>{N:4}</code> numéro sur 4 chiffres. Exemple : <code>{AA}{N:4}/{AA}</code> → 260019/26.</p>
+            <div class="grille-3">
+              <label>Proforma<input id="p-mod-proforma" data-param="modeles.proforma"></label>
+              <label>Facture<input id="p-mod-facture" data-param="modeles.facture"></label>
+              <label>Devis<input id="p-mod-devis" data-param="modeles.devis"></label>
+            </div>
+          </details>
         </fieldset>
 
         <fieldset>
-          <legend>Fiscalité et valeurs par défaut</legend>
+          <legend>TVA, timbre et note par défaut</legend>
           <div class="grille-3">
-            <label>Taux de TVA proposés (%)<input data-param="taux" placeholder="0, 7, 13, 19"></label>
+            <label>Taux de TVA proposés (%)<input id="p-taux" data-param="taux" placeholder="0, 7, 13, 19"></label>
             <label>TVA par défaut<select data-param="tvaDefaut" id="param-tva-defaut"></select></label>
-            <label>Timbre fiscal (DT)<input data-param="timbre" inputmode="decimal"></label>
+            <label>Timbre fiscal (DT)<input id="p-timbre" data-param="timbre" inputmode="decimal"></label>
           </div>
-          <p class="aide">Vérifiez les taux et le montant du timbre en vigueur avec votre comptable : ils changent avec les lois de finances.</p>
-          <label>Titre de note par défaut<input data-param="nbTitre"></label>
-          <label>Texte de note par défaut<textarea data-param="nbTexte" rows="3"></textarea></label>
+          <p class="aide">Faites vérifier les taux et le timbre en vigueur par votre comptable : ils changent avec les lois de finances. Le timbre s'applique aux factures.</p>
+          <label>Titre de la note par défaut<input id="p-nb-titre" data-param="nbTitre"></label>
+          <label>Texte de la note par défaut<textarea id="p-nb-texte" data-param="nbTexte" rows="3"></textarea></label>
         </fieldset>
 
         <fieldset>
           <legend>Données</legend>
           <div class="boutons">
-            <button type="button" data-action="charger-exemple">Charger l'exemple (proforma 260019/26)</button>
+            <button type="button" data-action="charger-exemple">Recharger l'exemple (proforma 260019/26)</button>
             <button type="button" class="danger" data-action="reinitialiser">Tout effacer</button>
           </div>
+          <p class="aide"><span id="mode-stockage" class="stockage"></span></p>
         </fieldset>
       </div>
     </section>
 
-    <section class="zone-apercu" id="zone-apercu" aria-label="Aperçu avant impression">
+    <section class="zone-apercu" id="zone-apercu" aria-label="Aperçu du document">
       <div id="apercu-echelle"><div id="apercu"></div></div>
     </section>
   </main>
 
+  <div id="chargement" class="chargement" role="status">Chargement de vos documents…</div>
+
+  <div id="dialogue" class="dialogue-fond" hidden>
+    <div class="dialogue" role="alertdialog" aria-modal="true" aria-labelledby="dialogue-message">
+      <p id="dialogue-message"></p>
+      <div class="boutons">
+        <button type="button" id="dialogue-annuler">Annuler</button>
+        <button type="button" id="dialogue-ok" class="primaire">Confirmer</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toasts" aria-live="polite"></div>
   <input type="file" id="fichier-import" accept="application/json,.json" hidden>
 
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="js/montant-lettres.js"></script>
   <script src="js/calculs.js"></script>
   <script src="js/rendu.js"></script>
   <script src="js/stockage.js"></script>
+  <script src="js/persistance.js"></script>
+  <script src="js/pdf.js"></script>
   <script src="js/exemple.js"></script>
   <script src="js/app.js"></script>
 </body>

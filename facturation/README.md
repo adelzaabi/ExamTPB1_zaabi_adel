@@ -1,25 +1,20 @@
-# Facturation : proformas, devis et factures (format tunisien)
+# Facturier : proformas, devis et factures (format tunisien)
 
-Ce logiciel produit des factures proforma, des devis et des factures au même format que la proforma n° 260019/26 analysée dans [ANALYSE.md](ANALYSE.md). Il calcule tout automatiquement : TVA, timbre, TTC, montant en lettres et numérotation.
+Ce logiciel produit des factures proforma, des devis et des factures au même format que la proforma n° 260019/26 analysée dans [ANALYSE.md](ANALYSE.md). Il calcule tout automatiquement : TVA, timbre, TTC, montant en lettres et numérotation. Il génère ensuite un **PDF** prêt à envoyer.
 
-- **Aucune installation** : HTML, CSS et JavaScript sans dépendance. Il fonctionne hors ligne.
+- **Aucune installation** : un seul fichier, `dist/facturier.html`, à ouvrir d'un double-clic (Chrome, Edge ou Firefox).
 - **Les données restent sur le poste** (stockage du navigateur), avec une sauvegarde et une restauration en fichier JSON.
-- **Export PDF** par la fonction d'impression du navigateur, au format A4.
+- **PDF vectoriel A4** (texte net et sélectionnable, environ 6 Ko). Une connexion Internet est nécessaire au premier chargement du module PDF ; hors ligne, le bouton « Imprimer » reste disponible.
 
-## Lancer le logiciel
+## Démarrer en 3 étapes
 
-Double-cliquez sur `index.html` (Chrome, Edge ou Firefox récents).
+1. **Ma société** : saisissez la raison sociale, l'adresse, le matricule fiscal, le RC et le téléphone. Importez le **cachet** (une image PNG à fond transparent donne le meilleur rendu). C'est à faire une seule fois.
+2. **Document** : choisissez le client et ajoutez les lignes. Les totaux se calculent seuls.
+3. **Télécharger le PDF** : le document est numéroté, enregistré et téléchargé.
 
-Au premier lancement, un exemple est chargé : la proforma 260019/26 (logiciel de gestion commerciale, 1 500,000 HT, TVA 7 %). L'identité de la société et du client y est fictive : saisissez la vôtre dans **Paramètres**.
+Une fois la proforma acceptée, **Convertir en facture** crée la facture avec son propre numéro et le timbre fiscal.
 
-## Utilisation
-
-1. **Paramètres** : raison sociale, adresse, matricule fiscal, RC, téléphone, logo et **cachet** (une image PNG à fond transparent donne le meilleur rendu). Réglez aussi les modèles de numérotation et le dernier numéro déjà utilisé.
-2. **Nouveau** : choisissez *Facture proforma*, *Facture* ou *Devis*. Le numéro est attribué automatiquement.
-3. **Client** : choisissez un client enregistré, ou saisissez-le puis « Enregistrer ce client dans la liste ».
-4. **Lignes** : ajoutez une ligne vide ou un article du catalogue. Le bouton ★ enregistre une ligne dans le catalogue.
-5. **Enregistrer** (ou Ctrl+S), puis **Imprimer / PDF**. Dans la fenêtre d'impression, choisissez « Enregistrer au format PDF », marges *par défaut* et « Graphiques d'arrière-plan » cochés.
-6. Une fois la proforma acceptée : **Convertir en facture**. La facture reçoit son propre numéro et le timbre fiscal.
+Au premier lancement, un exemple est chargé : la proforma 260019/26 (logiciel de gestion commerciale, 1 500,000 HT, TVA 7 %). L'identité de la société et du client y est fictive.
 
 ### Saisie de la désignation
 
@@ -45,11 +40,11 @@ Le modèle par défaut `{AA}{N:4}/{AA}` donne **260019/26**. Chaque type de docu
 
 ### Options d'affichage (par document)
 
-Colonnes quantité et remise, total TTC, montant en lettres, timbre fiscal, cachet. Si vous décochez *Total TTC* et *Montant en lettres*, vous obtenez une reproduction à l'identique du modèle d'origine.
+Colonnes quantité et remise, total TTC, montant en lettres, timbre fiscal, cachet. Si vous décochez *Total TTC* et *Montant en lettres*, vous obtenez une reproduction à l'identique du modèle d'origine. La colonne quantité s'affiche d'elle-même dès qu'une ligne a une quantité différente de 1.
 
 ## Sauvegarde
 
-Les données sont stockées dans le navigateur utilisé. Elles disparaissent si vous effacez les données de navigation, et ne sont pas partagées entre plusieurs ordinateurs. Pensez à faire régulièrement **Historique → Exporter une sauvegarde**. L'import permet de restaurer ces données ou de les transférer sur un autre poste.
+Ouvert depuis un fichier, le logiciel enregistre les données dans le navigateur utilisé. Publié comme page Claude, il les enregistre dans l'espace privé du compte de chaque utilisateur. Elles disparaissent si vous effacez les données de navigation, et ne sont pas partagées entre plusieurs ordinateurs. Pensez à faire régulièrement **Historique → Exporter une sauvegarde**. L'import permet de restaurer ces données ou de les transférer sur un autre poste.
 
 ## Fiscalité
 
@@ -58,15 +53,19 @@ Les taux de TVA proposés (0, 7, 13, 19 %) et le timbre fiscal (1,000 DT par dé
 ## Structure du code
 
 ```
+dist/facturier.html   version en un seul fichier (générée par npm run construire)
 index.html            interface (formulaire à gauche, aperçu A4 à droite)
 css/app.css           styles de l'interface
 css/facture.css       gabarit A4 du document (cotes relevées sur l'original), règles d'impression
 js/calculs.js         montants en millimes, totaux, formats, numérotation, contrôle du matricule fiscal
 js/montant-lettres.js montants en toutes lettres (dinars / millimes, règles d'accord)
 js/rendu.js           génération du document HTML, ajustement de la hauteur du tableau
-js/stockage.js        enregistrement local, export / import JSON
+js/stockage.js        état initial, export / import JSON
+js/persistance.js     choix du stockage : compte Claude, navigateur ou mémoire
+js/pdf.js             PDF vectoriel A4 (jsPDF) reprenant les cotes du gabarit
 js/exemple.js         données de l'exemple
 js/app.js             logique de l'interface
+outils/construire.js  assemble le fichier unique dist/facturier.html
 tests/                tests unitaires (Node.js)
 ANALYSE.md            analyse de la facture d'origine
 ```
@@ -74,7 +73,8 @@ ANALYSE.md            analyse de la facture d'origine
 ## Tests
 
 ```bash
-npm test        # ou : node --test tests/*.test.js   (Node.js 18 ou plus)
+npm test             # tests unitaires (Node.js 18 ou plus)
+npm run construire   # régénère dist/facturier.html après une modification
 ```
 
 Les tests couvrent les formats de montant, les totaux multi-taux avec remise et timbre, l'absence d'erreur d'arrondi, la numérotation, le matricule fiscal, les montants en lettres (accords de vingt, cent, mille, million), le rendu du document et l'échappement HTML.

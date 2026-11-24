@@ -143,3 +143,12 @@ test('stockage : normalisation d’une ancienne sauvegarde incomplète', () => {
   assert.equal(e.documents.length, 1);
   assert.throws(() => S.importer('[]'));
 });
+
+test('rendu : la colonne quantité apparaît d\u2019office si une quantité n\u2019est pas 1', () => {
+  const param = S.etatInitial().parametres;
+  const base = { type: 'proforma', numero: '1', date: '2026-01-01', client: {}, options: { qte: false } };
+  const un = R.rendreDocument(Object.assign({ lignes: [{ titre: 'A', qte: 1, prixHT: 10, tva: 7 }] }, base), param);
+  const deux = R.rendreDocument(Object.assign({ lignes: [{ titre: 'A', qte: 2, prixHT: 10, tva: 7 }] }, base), param);
+  assert.ok(!un.includes('>Qté<'));
+  assert.ok(deux.includes('>Qté<'));
+});

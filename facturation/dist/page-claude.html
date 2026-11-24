@@ -1,0 +1,3075 @@
+<title>Facturier</title>
+  <style>
+/* Interface de saisie (écran). Le document A4 garde ses propres couleurs (papier blanc). */
+/* Mise en page : barre d'actions en haut ; formulaire à gauche ; aperçu du papier sur un plan de travail à droite. */
+:root {
+  --fond: #eef1f5;          /* plan de travail derrière la feuille */
+  --surface: #ffffff;       /* panneaux, champs */
+  --surface-2: #f6f8fb;     /* cartes de ligne, vignettes */
+  --survol: #edf1f6;
+  --texte: #1b2633;
+  --discret: #5b6878;
+  --bordure: #d3dae3;
+  --accent: #1f4e79;        /* bleu « registre » */
+  --accent-fort: #173d60;
+  --accent-texte: #ffffff;
+  --accent-clair: #e3edf7;
+  --succes: #1d7a48;
+  --succes-fond: #e5f4ec;
+  --attention: #8a5300;
+  --attention-fond: #fff2da;
+  --erreur: #b3261e;
+  --erreur-fond: #fdeceb;
+  --ombre: rgba(20, 30, 45, 0.16);
+  --voile: rgba(16, 24, 34, 0.45);
+  --rayon: 6px;
+  --police: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fond: #11161d; --surface: #19212b; --surface-2: #1f2834; --survol: #26313f;
+    --texte: #e4e9ef; --discret: #9aa7b6; --bordure: #33404f;
+    --accent: #7fb0e0; --accent-fort: #a5c8ec; --accent-texte: #0d1620; --accent-clair: #1f3349;
+    --succes: #6cc896; --succes-fond: #173527; --attention: #f0bf6a; --attention-fond: #3a2c12;
+    --erreur: #f2938c; --erreur-fond: #3e1d1b; --ombre: rgba(0, 0, 0, 0.5); --voile: rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --fond: #11161d; --surface: #19212b; --surface-2: #1f2834; --survol: #26313f;
+  --texte: #e4e9ef; --discret: #9aa7b6; --bordure: #33404f;
+  --accent: #7fb0e0; --accent-fort: #a5c8ec; --accent-texte: #0d1620; --accent-clair: #1f3349;
+  --succes: #6cc896; --succes-fond: #173527; --attention: #f0bf6a; --attention-fond: #3a2c12;
+  --erreur: #f2938c; --erreur-fond: #3e1d1b; --ombre: rgba(0, 0, 0, 0.5); --voile: rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--fond);
+  color: var(--texte);
+  font-family: var(--police);
+  font-size: 14px;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+input, select, textarea {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--surface);
+  color: var(--texte);
+}
+textarea { resize: vertical; line-height: 1.4; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+input.invalide { border-color: var(--erreur); background: var(--erreur-fond); }
+a { color: var(--accent); }
+
+button {
+  padding: 7px 13px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--surface);
+  color: var(--texte);
+  cursor: pointer;
+  white-space: nowrap;
+}
+button:hover { background: var(--survol); }
+button:disabled { opacity: 0.45; cursor: default; }
+button.primaire { background: var(--accent); border-color: var(--accent); color: var(--accent-texte); font-weight: 600; }
+button.primaire:hover { background: var(--accent-fort); border-color: var(--accent-fort); }
+button.secondaire { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+button.danger { color: var(--erreur); }
+button.danger-plein { background: var(--erreur); border-color: var(--erreur); color: var(--surface); font-weight: 600; }
+button.petit { padding: 4px 9px; font-size: 12.5px; }
+[hidden] { display: none !important; }
+
+code { background: var(--accent-clair); padding: 0 4px; border-radius: 3px; font-size: 12.5px; }
+
+/* ---------- Barre du haut */
+.barre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--bordure);
+}
+.marque { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.marque-texte { min-width: 0; }
+.logo-app {
+  display: grid; place-items: center; flex: none;
+  width: 36px; height: 36px; border-radius: 8px;
+  background: var(--accent); color: var(--accent-texte); font-weight: 700; font-size: 19px;
+  font-family: "Times New Roman", "Liberation Serif", Times, serif;
+}
+.nom-app { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; }
+.titre-doc { color: var(--discret); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.etat { font-size: 11.5px; font-weight: 600; color: var(--succes); padding: 2px 8px; border-radius: 99px; background: var(--succes-fond); }
+.etat.modifie { color: var(--attention); background: var(--attention-fond); }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.groupe { display: flex; }
+.groupe select { width: auto; border-radius: var(--rayon) 0 0 var(--rayon); border-right: 0; }
+.groupe button { border-radius: 0 var(--rayon) var(--rayon) 0; }
+
+.alerte { padding: 8px 16px; background: var(--attention-fond); color: var(--attention); border-bottom: 1px solid var(--bordure); }
+
+/* ---------- Disposition */
+.espace { display: grid; grid-template-columns: minmax(360px, 480px) 1fr; }
+.editeur { background: var(--surface); border-right: 1px solid var(--bordure); min-width: 0; }
+.onglets {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; overflow-x: auto;
+  background: var(--surface); border-bottom: 1px solid var(--bordure);
+}
+.onglets button {
+  flex: 1; border: 0; border-radius: 0; background: none;
+  padding: 11px 8px; color: var(--discret); border-bottom: 2px solid transparent;
+}
+.onglets button.actif { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.panneau { display: none; padding: 14px 16px 40px; }
+.panneau.actif { display: block; }
+
+fieldset {
+  margin: 0 0 12px; padding: 10px 12px 12px;
+  border: 1px solid var(--bordure); border-radius: 8px;
+  min-width: 0;
+}
+legend { padding: 0 6px; font-weight: 600; color: var(--accent); }
+label { display: block; margin-bottom: 8px; font-size: 12.5px; color: var(--discret); }
+label > input, label > select, label > textarea, label > .avec-bouton { margin-top: 3px; }
+.grille-2 { display: grid; grid-template-columns: 1fr 1fr; column-gap: 10px; }
+.grille-3 { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 10px; }
+.grille-4 { display: grid; grid-template-columns: 0.8fr 1.3fr 0.9fr 0.9fr; column-gap: 8px; }
+.large { grid-column: 1 / -1; }
+.avec-bouton { display: flex; gap: 4px; }
+.avec-bouton input, .avec-bouton select { flex: 1; min-width: 0; }
+.aide { margin: 6px 0; font-size: 12px; color: var(--discret); line-height: 1.45; }
+.message-mf { display: block; color: var(--erreur); font-size: 11.5px; }
+.boutons { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.cases { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
+.case { display: flex; align-items: center; gap: 7px; margin: 0; color: var(--texte); font-size: 13px; }
+.case input { width: auto; }
+.recherche { margin-bottom: 8px; }
+details { margin-top: 6px; }
+summary { cursor: pointer; font-size: 12.5px; color: var(--accent); }
+.sauvegarde { margin-top: 16px; }
+
+/* ---------- Guide de démarrage */
+.guide {
+  margin-bottom: 12px; padding: 12px 14px;
+  border-radius: 8px; background: var(--accent-clair); color: var(--texte);
+  line-height: 1.5;
+}
+.guide ol { margin: 6px 0 10px; padding-left: 20px; }
+.guide li { margin-bottom: 3px; }
+
+/* ---------- Lignes du document */
+.carte-ligne {
+  margin-bottom: 10px; padding: 8px 10px 4px;
+  border: 1px solid var(--bordure); border-radius: 8px; background: var(--surface-2);
+}
+.carte-entete { display: flex; flex-wrap: wrap; gap: 6px; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.carte-entete strong { font-size: 13px; }
+.carte-boutons { display: flex; gap: 4px; }
+.carte-boutons button { padding: 2px 8px; }
+.total-ligne { text-align: right; font-size: 12.5px; color: var(--discret); margin: -2px 0 4px; }
+.total-ligne strong { color: var(--texte); font-variant-numeric: tabular-nums; }
+.barre-lignes { display: flex; flex-wrap: wrap; gap: 6px; justify-content: space-between; }
+.barre-lignes .avec-bouton { flex: 1; min-width: 200px; }
+.vide { color: var(--discret); font-style: italic; }
+
+.resume {
+  position: sticky; bottom: 0;
+  display: flex; flex-wrap: wrap; gap: 4px 16px; justify-content: flex-end;
+  padding: 10px 12px; border-radius: 8px;
+  background: var(--accent-clair); font-size: 13px;
+}
+.resume strong { font-variant-numeric: tabular-nums; }
+.resume .fort { font-size: 14px; color: var(--accent); }
+
+/* ---------- Listes */
+.defilement { overflow-x: auto; }
+table.liste { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.liste th, table.liste td { padding: 6px; border-bottom: 1px solid var(--bordure); text-align: left; vertical-align: top; }
+table.liste th { color: var(--discret); font-weight: 600; font-size: 12px; }
+table.liste td.montant { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+table.liste td.actions-ligne { white-space: nowrap; text-align: right; }
+table.liste tr.courant td { background: var(--accent-clair); }
+.badge { display: inline-block; padding: 1px 7px; border-radius: 99px; font-size: 11.5px; background: var(--survol); }
+.badge.facture { background: var(--succes-fond); color: var(--succes); }
+.badge.proforma { background: var(--accent-clair); color: var(--accent); }
+.badge.devis { background: var(--attention-fond); color: var(--attention); }
+.stockage { font-weight: 600; }
+.stockage.compte, .stockage.local { color: var(--succes); }
+.stockage.memoire { color: var(--erreur); }
+
+/* ---------- Images */
+.images { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.bloc-image { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: var(--discret); }
+.vignette {
+  display: grid; place-items: center; height: 90px;
+  border: 1px dashed var(--bordure); border-radius: 6px; background: #ffffff;
+}
+.vignette .aide { color: #5b6878; }
+.vignette img { max-width: 100%; max-height: 84px; }
+.bloc-image input[type=file] { padding: 4px; font-size: 12px; }
+
+/* ---------- Aperçu */
+.zone-apercu { padding: 24px; overflow: auto; min-width: 0; }
+#apercu-echelle { margin: 0 auto; }
+#apercu { transform-origin: top left; width: 210mm; }
+#apercu .page { box-shadow: 0 2px 16px var(--ombre); }
+
+/* ---------- Chargement, dialogue, notifications */
+.chargement {
+  position: fixed; inset: 0; z-index: 20;
+  display: grid; place-items: center;
+  background: var(--fond); color: var(--discret); font-size: 15px;
+}
+.dialogue-fond {
+  position: fixed; inset: 0; z-index: 30;
+  display: grid; place-items: center; padding: 16px;
+  background: var(--voile);
+}
+.dialogue {
+  width: min(440px, 100%); padding: 18px 18px 8px;
+  border-radius: 10px; background: var(--surface); color: var(--texte);
+  box-shadow: 0 10px 40px var(--ombre);
+}
+.dialogue p { margin: 0 0 16px; line-height: 1.5; }
+.dialogue .boutons { justify-content: flex-end; }
+
+#toasts {
+  position: fixed; z-index: 40; display: flex; flex-direction: column; gap: 8px;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  left: max(16px, env(safe-area-inset-left, 0px));
+  align-items: flex-end; pointer-events: none;
+}
+.toast {
+  max-width: 380px; padding: 10px 14px; border-radius: 8px;
+  background: var(--texte); color: var(--surface); box-shadow: 0 4px 16px var(--ombre);
+  transition: opacity 0.4s, transform 0.4s;
+}
+.toast.succes { background: var(--succes); color: var(--surface); }
+.toast.erreur { background: var(--erreur); color: var(--surface); }
+.toast.sortie { opacity: 0; transform: translateY(8px); }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+
+@media screen and (min-width: 1000px) {
+  html, body { height: 100%; }
+  body { display: flex; flex-direction: column; overflow: hidden; }
+  .espace { flex: 1; min-height: 0; }
+  .editeur, .zone-apercu { overflow-y: auto; }
+}
+@media screen and (max-width: 999px) {
+  .espace { grid-template-columns: 1fr; }
+  .editeur { border-right: 0; border-bottom: 1px solid var(--bordure); }
+  .zone-apercu { padding: 16px; }
+}
+@media screen and (max-width: 560px) {
+  .grille-2, .grille-3, .cases, .images { grid-template-columns: 1fr; }
+  .grille-4 { grid-template-columns: 1fr 1fr; }
+  .actions { width: 100%; }
+  .actions > button.primaire { flex: 1 1 100%; order: -1; }
+  .onglets button { flex: none; padding: 11px 12px; }
+}
+
+/* ---------- Impression : seul le document sort */
+@media print {
+  html, body { height: auto; background: #fff; overflow: visible; }
+  body { display: block; }
+  .barre, .alerte, .editeur, #toasts, .chargement, .dialogue-fond { display: none !important; }
+  .espace { display: block; }
+  .zone-apercu { padding: 0; overflow: visible; }
+  #apercu-echelle { width: auto !important; height: auto !important; }
+  #apercu { transform: none !important; width: auto; }
+  #apercu .page { box-shadow: none; }
+}
+</style>
+  <style>
+/*
+ * Document A4 imprimable — cotes relevées sur la facture d'origine (en mm).
+ * Les marges écran (padding de .page) sont identiques aux marges d'impression (@page)
+ * pour que l'aperçu corresponde exactement au PDF.
+ */
+@page {
+  size: A4;
+  margin: 12mm 12mm 12mm 11mm;
+}
+
+.page {
+  position: relative;
+  box-sizing: border-box;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 12mm 12mm 12mm 11mm;
+  background: #fff;
+  color: #000;
+  font-family: "Times New Roman", "Liberation Serif", Tinos, Times, serif;
+  font-size: 10.5pt;
+  line-height: 1.2;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.page *, .page *::before, .page *::after { box-sizing: border-box; }
+.page .gris-clair { background: #d9d9d9; }
+.page .gris { background: #a6a6a6; }
+
+/* ---------- En-tête */
+.page .entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6mm;
+  margin-top: 14mm;
+  min-height: 30mm;
+}
+.page .societe {
+  margin-left: 1.3mm;
+  max-width: 88mm;
+  font-size: 10pt;
+  line-height: 1.2;
+}
+.page .societe .logo { height: 16mm; margin-bottom: 1.5mm; }
+.page .societe .logo img { max-height: 16mm; max-width: 60mm; object-fit: contain; }
+.page .societe .nom { font-size: 12pt; font-weight: bold; line-height: 1.15; }
+
+.page .cadre-client {
+  flex: none;
+  width: 95mm;
+  min-height: 23.5mm;
+  margin-top: 2.5mm;
+  padding: 1mm 1.2mm;
+  border: 1px solid #000;
+  font-size: 12pt;
+  line-height: 1.15;
+}
+.page .cadre-client .ligne { display: flex; }
+.page .cadre-client .lib { flex: none; width: 21mm; }
+.page .cadre-client .val { overflow-wrap: anywhere; }
+
+/* ---------- Bandeau titre + références */
+.page table { border-collapse: collapse; }
+.page table.bandeau { width: 100%; margin-top: 18mm; }
+.page table.bandeau td { border: 1px solid #000; }
+.page table.bandeau .titre {
+  height: 6mm;
+  padding: 0;
+  text-align: center;
+  font-size: 14pt;
+  font-weight: bold;
+  line-height: 6mm;
+  letter-spacing: 0.2pt;
+}
+.page table.bandeau .ref {
+  height: 9.4mm;
+  padding: 0 1mm 0.4mm;
+  vertical-align: bottom;
+  font-size: 12pt;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.page table.bandeau .num-doc { width: 47.5mm; }
+.page table.bandeau .date-doc { width: 73mm; }
+.page table.bandeau .bl-doc { padding-left: 1.3mm; }
+
+/* ---------- Tableau des lignes */
+.page table.lignes {
+  width: 100%;
+  margin-top: 2.8mm;
+  table-layout: fixed;
+  border: 1px solid #000;
+}
+.page table.lignes th {
+  height: 8.7mm;
+  padding: 0 1mm;
+  border: 1px solid #000;
+  text-align: center;
+  font-size: 9pt;
+  font-weight: bold;
+}
+.page table.lignes td {
+  padding: 0.6mm 1.2mm 0.8mm;
+  border-left: 1px solid #000;
+  border-right: 1px solid #000;
+  vertical-align: top;
+}
+.page table.lignes td.num { text-align: right; font-size: 10pt; white-space: nowrap; }
+.page table.lignes td.centre { text-align: center; }
+.page table.lignes tr.article + tr.article td { padding-top: 3mm; }
+.page table.lignes tr.remplissage td { padding: 0; }
+.page table.lignes td.des { overflow-wrap: anywhere; }
+
+.page td.des > div { line-height: 4.43mm; } /* pas de ligne mesuré sur le modèle */
+.page .d-titre { font-size: 11pt; text-decoration: underline; }
+.page .d-section { font-size: 9pt; font-weight: bold; margin-top: 0.2mm; }
+.page .d-item { padding-left: 3.5mm; font-size: 11pt; }
+.page .d-vide { height: 2mm; }
+
+/* ---------- Pied : note + totaux */
+.page .pied {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6mm;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.page .pied-gauche { flex: 1; min-width: 0; }
+.page .pied-droite { flex: none; width: 56mm; }
+.page .nb { font-size: 10pt; line-height: 1.15; }
+.page .nb-lib { font-size: 9pt; }
+.page .nb-entete { font-weight: bold; text-decoration: underline; line-height: 1.05; }
+.page .nb-titre { font-size: 12pt; }
+
+.page table.totaux { width: 100%; margin-top: -1px; font-size: 9.5pt; }
+.page table.totaux td { height: 5.2mm; padding: 0 1.2mm; border: 1px solid #000; }
+.page table.totaux td.lib { text-align: center; }
+.page table.totaux td.val { width: 23mm; text-align: right; white-space: nowrap; }
+.page table.totaux tr.net td { font-weight: bold; }
+
+.page .lettres { margin-top: 4mm; font-size: 10.5pt; line-height: 1.25; }
+
+/* ---------- Cachet (sous les totaux, comme sur le modèle) */
+.page .zone-cachet {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  left: -11mm; /* centre du cachet à ~159 mm du bord, comme sur le modèle */
+  min-height: 45mm;
+  margin-top: 5mm;
+}
+.page .zone-cachet img { max-width: 50mm; max-height: 45mm; object-fit: contain; align-self: flex-start; }
+
+@media print {
+  .page {
+    width: auto;
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+    box-shadow: none !important;
+  }
+  .page table.lignes thead { display: table-header-group; }
+}
+</style>
+<header class="barre">
+    <div class="marque">
+      <span class="logo-app" aria-hidden="true">F</span>
+      <div class="marque-texte">
+        <div class="nom-app">Facturier <span id="etat-doc" class="etat"></span></div>
+        <div id="titre-doc" class="titre-doc"></div>
+      </div>
+    </div>
+    <div class="actions">
+      <div class="groupe" role="group" aria-label="Nouveau document">
+        <select id="nouveau-type" aria-label="Type du nouveau document">
+          <option value="proforma">Facture proforma</option>
+          <option value="facture">Facture</option>
+          <option value="devis">Devis</option>
+        </select>
+        <button type="button" data-action="nouveau">+ Nouveau</button>
+      </div>
+      <button type="button" data-action="convertir" title="Créer la facture définitive à partir de cette proforma ou de ce devis">Convertir en facture</button>
+      <button type="button" data-action="dupliquer" title="Copier ce document avec un nouveau numéro">Copier</button>
+      <button type="button" data-action="enregistrer" class="secondaire" title="Ctrl+S">Enregistrer</button>
+      <button type="button" data-action="imprimer" title="Ouvrir la fenêtre d'impression">Imprimer</button>
+      <button type="button" data-action="pdf" class="primaire" title="Enregistre le document et télécharge le PDF">Télécharger le PDF</button>
+    </div>
+  </header>
+
+  <div id="alerte-stockage" class="alerte" hidden></div>
+
+  <main class="espace">
+    <section class="editeur" aria-label="Saisie">
+      <nav class="onglets" role="tablist">
+        <button type="button" class="actif" data-onglet="document" role="tab" aria-selected="true">Document</button>
+        <button type="button" data-onglet="clients" role="tab" aria-selected="false">Clients</button>
+        <button type="button" data-onglet="catalogue" role="tab" aria-selected="false">Catalogue</button>
+        <button type="button" data-onglet="historique" role="tab" aria-selected="false">Historique</button>
+        <button type="button" data-onglet="parametres" role="tab" aria-selected="false">Ma société</button>
+      </nav>
+
+      <!-- ============ DOCUMENT ============ -->
+      <div class="panneau actif" id="onglet-document" role="tabpanel">
+        <div id="guide" class="guide" hidden>
+          <strong>Trois étapes</strong>
+          <ol>
+            <li><a href="#" data-aller="parametres">Renseignez votre société</a> (nom, matricule fiscal, cachet) : une seule fois.</li>
+            <li>Choisissez le client et ajoutez les lignes ci-dessous. Les totaux se calculent seuls.</li>
+            <li>Cliquez sur <b>Télécharger le PDF</b> : le document est numéroté, enregistré et prêt à envoyer.</li>
+          </ol>
+          <button type="button" class="petit" data-action="masquer-guide">J'ai compris</button>
+        </div>
+
+        <fieldset>
+          <legend>Document</legend>
+          <div class="grille-2">
+            <label>Type
+              <select id="doc-type" data-champ="type">
+                <option value="proforma">Facture proforma</option>
+                <option value="facture">Facture</option>
+                <option value="devis">Devis</option>
+              </select>
+            </label>
+            <label>Date
+              <input id="doc-date" type="date" data-champ="date">
+            </label>
+            <label>Numéro
+              <span class="avec-bouton">
+                <input id="doc-numero" data-champ="numero" autocomplete="off">
+                <button type="button" data-action="numero-auto" title="Reprendre le numéro automatique" aria-label="Reprendre le numéro automatique">↻</button>
+              </span>
+            </label>
+            <label>Bon de livraison
+              <input id="doc-bl" data-champ="bonLivraison" autocomplete="off" placeholder="facultatif">
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Client</legend>
+          <label>Client déjà enregistré
+            <select id="choix-client"></select>
+          </label>
+          <div class="grille-2">
+            <label>Code<input id="doc-client-code" data-champ="client.code" autocomplete="off" placeholder="auto"></label>
+            <label>Nom / raison sociale<input id="doc-client-nom" data-champ="client.nom" autocomplete="off"></label>
+            <label class="large">Adresse<input id="doc-client-adresse" data-champ="client.adresse" autocomplete="off"></label>
+            <label class="large">Code TVA (matricule fiscal)
+              <input id="doc-client-mf" data-champ="client.mf" data-mf placeholder="vide pour un particulier" autocomplete="off">
+              <small class="message-mf"></small>
+            </label>
+          </div>
+          <button type="button" data-action="memoriser-client">Enregistrer ce client pour la prochaine fois</button>
+        </fieldset>
+
+        <fieldset>
+          <legend>Lignes</legend>
+          <div id="liste-lignes"></div>
+          <div class="barre-lignes">
+            <button type="button" data-action="ajouter-ligne">+ Ligne vide</button>
+            <span class="avec-bouton">
+              <select id="choix-article" aria-label="Article du catalogue"></select>
+              <button type="button" data-action="ajouter-article">+ Ajouter</button>
+            </span>
+          </div>
+          <p class="aide">Dans le détail, une ligne qui commence par <code>#</code> devient un sous-titre en gras
+            (ex. <code># 1) : Ventes</code>) ; les autres lignes s'affichent en retrait.</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Note (NB)</legend>
+          <label>Titre de la note<input id="doc-nb-titre" data-champ="nbTitre" placeholder="cette offre comporte"></label>
+          <label>Texte (une ligne par point)<textarea id="doc-nb-texte" data-champ="nbTexte" rows="4"></textarea></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Affichage</legend>
+          <div class="cases">
+            <label class="case"><input id="opt-ttc" type="checkbox" data-champ="options.ttc"> Total TTC</label>
+            <label class="case"><input id="opt-lettres" type="checkbox" data-champ="options.lettres"> Montant en lettres</label>
+            <label class="case"><input id="opt-timbre" type="checkbox" data-champ="options.timbre"> Timbre fiscal</label>
+            <label class="case"><input id="opt-cachet" type="checkbox" data-champ="options.cachet"> Cachet</label>
+            <label class="case"><input id="opt-qte" type="checkbox" data-champ="options.qte"> Colonne quantité</label>
+            <label class="case"><input id="opt-remise" type="checkbox" data-champ="options.remise"> Colonne remise</label>
+          </div>
+        </fieldset>
+
+        <div id="resume-totaux" class="resume" aria-live="polite"></div>
+      </div>
+
+      <!-- ============ CLIENTS ============ -->
+      <div class="panneau" id="onglet-clients" role="tabpanel">
+        <fieldset>
+          <legend id="titre-form-client">Nouveau client</legend>
+          <input type="hidden" id="cl-id">
+          <div class="grille-2">
+            <label>Code<input id="cl-code" autocomplete="off" placeholder="auto"></label>
+            <label>Nom / raison sociale<input id="cl-nom" autocomplete="off"></label>
+            <label class="large">Adresse<input id="cl-adresse" autocomplete="off"></label>
+            <label>Code TVA<input id="cl-mf" data-mf autocomplete="off"><small class="message-mf"></small></label>
+            <label>Téléphone<input id="cl-tel" autocomplete="off"></label>
+          </div>
+          <div class="boutons">
+            <button type="button" class="secondaire" data-action="client-enregistrer">Enregistrer le client</button>
+            <button type="button" data-action="client-vider">Vider</button>
+          </div>
+        </fieldset>
+        <input type="search" id="filtre-clients" class="recherche" placeholder="Rechercher un client…" aria-label="Rechercher un client">
+        <div id="table-clients"></div>
+      </div>
+
+      <!-- ============ CATALOGUE ============ -->
+      <div class="panneau" id="onglet-catalogue" role="tabpanel">
+        <fieldset>
+          <legend id="titre-form-article">Nouvel article ou service</legend>
+          <input type="hidden" id="ar-id">
+          <div class="grille-2">
+            <label>Référence<input id="ar-ref" autocomplete="off"></label>
+            <label>Titre<input id="ar-titre" autocomplete="off"></label>
+            <label class="large">Détail<textarea id="ar-description" rows="6"></textarea></label>
+            <label>Prix HT<input id="ar-prix" inputmode="decimal" autocomplete="off"></label>
+            <label>TVA<select id="ar-tva"></select></label>
+          </div>
+          <div class="boutons">
+            <button type="button" class="secondaire" data-action="article-enregistrer">Enregistrer l'article</button>
+            <button type="button" data-action="article-vider">Vider</button>
+          </div>
+        </fieldset>
+        <input type="search" id="filtre-articles" class="recherche" placeholder="Rechercher un article…" aria-label="Rechercher un article">
+        <div id="table-articles"></div>
+      </div>
+
+      <!-- ============ HISTORIQUE ============ -->
+      <div class="panneau" id="onglet-historique" role="tabpanel">
+        <input type="search" id="filtre-documents" class="recherche" placeholder="Rechercher (numéro, client, type)…" aria-label="Rechercher un document">
+        <div id="table-documents"></div>
+        <fieldset class="sauvegarde">
+          <legend>Sauvegarde</legend>
+          <p class="aide">Un fichier de sauvegarde contient la société, les clients, le catalogue et tous les documents.</p>
+          <div class="boutons">
+            <button type="button" data-action="exporter">Exporter une sauvegarde</button>
+            <button type="button" data-action="importer">Importer une sauvegarde</button>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- ============ MA SOCIÉTÉ ============ -->
+      <div class="panneau" id="onglet-parametres" role="tabpanel">
+        <fieldset>
+          <legend>Votre société</legend>
+          <div class="grille-2">
+            <label class="large">Raison sociale<input id="p-nom" data-param="societe.nom" autocomplete="off"></label>
+            <label class="large">Adresse<textarea id="p-adresse" data-param="societe.adresse" rows="2"></textarea></label>
+            <label>Matricule fiscal (TVA)<input id="p-mf" data-param="societe.mf" data-mf autocomplete="off" placeholder="1234567/A/A/M/000"><small class="message-mf"></small></label>
+            <label>Registre de commerce (RC)<input id="p-rc" data-param="societe.rc" autocomplete="off"></label>
+            <label>Téléphone<input id="p-tel" data-param="societe.tel" autocomplete="off"></label>
+            <label>Email<input id="p-email" data-param="societe.email" autocomplete="off"></label>
+            <label class="large">RIB (facultatif)<input id="p-rib" data-param="societe.rib" autocomplete="off"></label>
+          </div>
+          <div class="images">
+            <div class="bloc-image">
+              <span>Logo (facultatif)</span>
+              <div class="vignette" id="vignette-logo"></div>
+              <input id="p-logo" type="file" accept="image/png,image/jpeg" data-image="logo" aria-label="Choisir le logo">
+              <button type="button" class="petit" data-action="image-supprimer" data-image="logo">Retirer le logo</button>
+            </div>
+            <div class="bloc-image">
+              <span>Cachet / signature (photo ou scan, PNG à fond transparent idéal)</span>
+              <div class="vignette" id="vignette-cachet"></div>
+              <input id="p-cachet" type="file" accept="image/png,image/jpeg" data-image="cachet" aria-label="Choisir le cachet">
+              <button type="button" class="petit" data-action="image-supprimer" data-image="cachet">Retirer le cachet</button>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Numérotation</legend>
+          <p class="aide" id="libelle-compteurs"></p>
+          <div class="grille-3">
+            <label>Proformas<input id="p-cpt-proforma" type="number" min="0" step="1" data-compteur="proforma"></label>
+            <label>Factures<input id="p-cpt-facture" type="number" min="0" step="1" data-compteur="facture"></label>
+            <label>Devis<input id="p-cpt-devis" type="number" min="0" step="1" data-compteur="devis"></label>
+          </div>
+          <details>
+            <summary>Format des numéros</summary>
+            <p class="aide">Jetons : <code>{AAAA}</code> année, <code>{AA}</code> année sur 2 chiffres, <code>{MM}</code> mois,
+              <code>{N:4}</code> numéro sur 4 chiffres. Exemple : <code>{AA}{N:4}/{AA}</code> → 260019/26.</p>
+            <div class="grille-3">
+              <label>Proforma<input id="p-mod-proforma" data-param="modeles.proforma"></label>
+              <label>Facture<input id="p-mod-facture" data-param="modeles.facture"></label>
+              <label>Devis<input id="p-mod-devis" data-param="modeles.devis"></label>
+            </div>
+          </details>
+        </fieldset>
+
+        <fieldset>
+          <legend>TVA, timbre et note par défaut</legend>
+          <div class="grille-3">
+            <label>Taux de TVA proposés (%)<input id="p-taux" data-param="taux" placeholder="0, 7, 13, 19"></label>
+            <label>TVA par défaut<select data-param="tvaDefaut" id="param-tva-defaut"></select></label>
+            <label>Timbre fiscal (DT)<input id="p-timbre" data-param="timbre" inputmode="decimal"></label>
+          </div>
+          <p class="aide">Faites vérifier les taux et le timbre en vigueur par votre comptable : ils changent avec les lois de finances. Le timbre s'applique aux factures.</p>
+          <label>Titre de la note par défaut<input id="p-nb-titre" data-param="nbTitre"></label>
+          <label>Texte de la note par défaut<textarea id="p-nb-texte" data-param="nbTexte" rows="3"></textarea></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Données</legend>
+          <div class="boutons">
+            <button type="button" data-action="charger-exemple">Recharger l'exemple (proforma 260019/26)</button>
+            <button type="button" class="danger" data-action="reinitialiser">Tout effacer</button>
+          </div>
+          <p class="aide"><span id="mode-stockage" class="stockage"></span></p>
+        </fieldset>
+      </div>
+    </section>
+
+    <section class="zone-apercu" id="zone-apercu" aria-label="Aperçu du document">
+      <div id="apercu-echelle"><div id="apercu"></div></div>
+    </section>
+  </main>
+
+  <div id="chargement" class="chargement" role="status">Chargement de vos documents…</div>
+
+  <div id="dialogue" class="dialogue-fond" hidden>
+    <div class="dialogue" role="alertdialog" aria-modal="true" aria-labelledby="dialogue-message">
+      <p id="dialogue-message"></p>
+      <div class="boutons">
+        <button type="button" id="dialogue-annuler">Annuler</button>
+        <button type="button" id="dialogue-ok" class="primaire">Confirmer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toasts" aria-live="polite"></div>
+  <input type="file" id="fichier-import" accept="application/json,.json" hidden>
+
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script>
+/*
+ * Conversion d'un montant en toutes lettres (français, dinars tunisiens).
+ *   montantEnLettres(1605)      -> "Mille six cent cinq dinars"
+ *   montantEnLettres(12.5)      -> "Douze dinars et cinq cents millimes"
+ * Orthographe traditionnelle : traits d'union entre dizaines et unités,
+ * « et » pour 21, 31… 71, accord de « vingt » et « cent » (quatre-vingts, deux cents)
+ * sauf devant « mille ».
+ */
+(function (racine, fabrique) {
+  const api = fabrique();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else racine.MontantLettres = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const UNITES = [
+    'zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf',
+    'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize',
+    'dix-sept', 'dix-huit', 'dix-neuf',
+  ];
+  const DIZAINES = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante',
+    'soixante', 'quatre-vingt', 'quatre-vingt'];
+
+  // 1..99. « final » = le nombre n'est pas suivi de « mille » (quatre-vingts prend un s).
+  function moinsDeCent(n, final) {
+    if (n < 20) return UNITES[n];
+    const d = Math.floor(n / 10);
+    const u = n % 10;
+    if (d === 7 || d === 9) {
+      if (d === 7 && u === 1) return 'soixante et onze';
+      return DIZAINES[d] + '-' + UNITES[10 + u];
+    }
+    if (u === 0) return d === 8 ? (final ? 'quatre-vingts' : 'quatre-vingt') : DIZAINES[d];
+    if (u === 1 && d !== 8) return DIZAINES[d] + ' et un';
+    return DIZAINES[d] + '-' + UNITES[u];
+  }
+
+  // 1..999
+  function moinsDeMille(n, final) {
+    const c = Math.floor(n / 100);
+    const r = n % 100;
+    const morceaux = [];
+    if (c === 1) morceaux.push('cent');
+    else if (c > 1) morceaux.push(UNITES[c] + ' ' + (r === 0 && final ? 'cents' : 'cent'));
+    if (r > 0) morceaux.push(moinsDeCent(r, final));
+    return morceaux.join(' ');
+  }
+
+  /** Entier positif (jusqu'à 999 999 999 999) en lettres. */
+  function nombreEnLettres(nombre) {
+    let n = Math.floor(Math.abs(Number(nombre) || 0));
+    if (n === 0) return 'zéro';
+    if (n > 999999999999) throw new RangeError('Nombre trop grand');
+    const milliards = Math.floor(n / 1e9);
+    const millions = Math.floor(n / 1e6) % 1000;
+    const milliers = Math.floor(n / 1e3) % 1000;
+    const reste = n % 1000;
+    const morceaux = [];
+    // devant million(s)/milliard(s) (noms), vingt et cent s'accordent : « deux cents millions »
+    if (milliards) morceaux.push(milliards === 1 ? 'un milliard' : moinsDeMille(milliards, true) + ' milliards');
+    if (millions) morceaux.push(millions === 1 ? 'un million' : moinsDeMille(millions, true) + ' millions');
+    // « mille » est invariable et ne prend pas « un » ; vingt/cent restent invariables devant lui
+    if (milliers) morceaux.push(milliers === 1 ? 'mille' : moinsDeMille(milliers, false) + ' mille');
+    if (reste) morceaux.push(moinsDeMille(reste, true));
+    return morceaux.join(' ');
+  }
+
+  function majuscule(s) {
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  }
+
+  /**
+   * Montant en dinars (3 décimales = millimes) en toutes lettres.
+   * options.devise / devisePluriel / sousUnite / sousUnitePluriel pour une autre monnaie.
+   */
+  function montantEnLettres(montant, options) {
+    const o = Object.assign({
+      devise: 'dinar', devisePluriel: 'dinars',
+      sousUnite: 'millime', sousUnitePluriel: 'millimes', decimales: 3,
+    }, options || {});
+    const facteur = Math.pow(10, o.decimales);
+    const total = Math.round(Math.abs(Number(montant) || 0) * facteur);
+    const entier = Math.floor(total / facteur);
+    const fraction = total % facteur;
+
+    const morceaux = [];
+    if (entier > 0 || fraction === 0) {
+      let txt = nombreEnLettres(entier) + ' ';
+      // « un million de dinars », « deux milliards de dinars »
+      if (entier >= 1e6 && entier % 1e6 === 0) txt += 'de ';
+      txt += entier > 1 ? o.devisePluriel : o.devise;
+      morceaux.push(txt);
+    }
+    if (fraction > 0) {
+      morceaux.push(nombreEnLettres(fraction) + ' ' + (fraction > 1 ? o.sousUnitePluriel : o.sousUnite));
+    }
+    const signe = Number(montant) < 0 && total > 0 ? 'moins ' : '';
+    return majuscule(signe + morceaux.join(' et '));
+  }
+
+  return { nombreEnLettres, montantEnLettres };
+});
+</script>
+  <script>
+/*
+ * Calculs et formats propres aux factures tunisiennes :
+ *  - montants en dinars à 3 décimales (millimes), calculés en entiers pour éviter les erreurs d'arrondi ;
+ *  - format d'affichage « 1 500,000 » ;
+ *  - TVA par taux, timbre fiscal, total TTC ;
+ *  - numérotation paramétrable (ex. modèle « {AA}{N:4}/{AA} » -> 260019/26) ;
+ *  - contrôle de forme du matricule fiscal (ex. 1234567/A/A/M/000).
+ */
+(function (racine, fabrique) {
+  const api = fabrique();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else racine.Calculs = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const ESPACE = ' '; // espace insécable entre les milliers
+
+  /** Lit un nombre saisi à la française (« 1 500,250 », « 7 », « 1.500,25 »). */
+  function lireNombre(v) {
+    if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+    if (v === null || v === undefined) return 0;
+    let s = String(v).replace(/[\s  ]/g, '').replace('%', '');
+    if (s.includes(',') && s.includes('.')) s = s.replace(/\./g, '');
+    s = s.replace(',', '.');
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function versMillimes(v) {
+    return Math.round(lireNombre(v) * 1000);
+  }
+
+  /** 1500 -> "1 500,000" */
+  function formatMontant(v, decimales) {
+    const dec = decimales === undefined ? 3 : decimales;
+    const n = lireNombre(v);
+    const facteur = Math.pow(10, dec);
+    const total = Math.round(Math.abs(n) * facteur);
+    const entier = Math.floor(total / facteur).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ESPACE);
+    const frac = dec > 0 ? ',' + String(total % facteur).padStart(dec, '0') : '';
+    return (n < 0 && total > 0 ? '-' : '') + entier + frac;
+  }
+
+  /** 7 -> "07%", 19 -> "19%", 5.5 -> "5,5%" */
+  function formatTaux(t) {
+    const n = lireNombre(t);
+    return (Number.isInteger(n) ? String(n).padStart(2, '0') : String(n).replace('.', ',')) + '%';
+  }
+
+  /** Quantité : 1 -> "1", 2.5 -> "2,5" */
+  function formatQuantite(q) {
+    const n = Math.round(lireNombre(q) * 1000) / 1000;
+    return String(n).replace('.', ',');
+  }
+
+  /** "2026-10-14" -> "14-10-2026" */
+  function formatDate(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+    return m ? `${m[3]}-${m[2]}-${m[1]}` : String(iso || '');
+  }
+
+  function annee(iso) {
+    const a = parseInt(String(iso || '').slice(0, 4), 10);
+    return Number.isFinite(a) && a > 999 ? a : new Date().getFullYear();
+  }
+
+  /**
+   * Numéro de document à partir d'un modèle.
+   * Jetons : {AAAA} année, {AA} année sur 2 chiffres, {MM} mois, {N} ou {N:4} séquence complétée par des zéros.
+   */
+  function formaterNumero(modele, sequence, dateIso) {
+    const a = String(annee(dateIso));
+    const mois = (/^\d{4}-(\d{2})/.exec(String(dateIso || '')) || [])[1] ||
+      String(new Date().getMonth() + 1).padStart(2, '0');
+    return String(modele || '{N}')
+      .replace(/\{AAAA\}/g, a)
+      .replace(/\{AA\}/g, a.slice(-2))
+      .replace(/\{MM\}/g, mois)
+      .replace(/\{N(?::(\d+))?\}/g, (_, largeur) => String(sequence).padStart(Number(largeur || 1), '0'));
+  }
+
+  /** Montants d'une ligne, en millimes. */
+  function calculerLigne(ligne) {
+    const qte = lireNombre(ligne.qte === undefined || ligne.qte === '' ? 1 : ligne.qte);
+    const brut = Math.round(qte * versMillimes(ligne.prixHT));
+    const remise = Math.round(brut * lireNombre(ligne.remise) / 100);
+    return { brut, remise, net: brut - remise, taux: lireNombre(ligne.tva) };
+  }
+
+  /**
+   * Totaux d'un document. Les montants rendus sont en dinars (arrondis au millime).
+   * options.timbre : montant du timbre fiscal à ajouter (0 si non applicable).
+   */
+  function calculerTotaux(lignes, options) {
+    const o = options || {};
+    const parTaux = new Map();
+    let totalHT = 0;
+    const detail = (lignes || []).map((l) => {
+      const c = calculerLigne(l);
+      totalHT += c.net;
+      parTaux.set(c.taux, (parTaux.get(c.taux) || 0) + c.net);
+      return { totalHT: c.net / 1000, remise: c.remise / 1000 };
+    });
+    let totalTVA = 0;
+    const recapTva = Array.from(parTaux.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([taux, base]) => {
+        const montant = Math.round(base * taux / 100);
+        totalTVA += montant;
+        return { taux, base: base / 1000, montant: montant / 1000 };
+      });
+    const timbre = versMillimes(o.timbre || 0);
+    return {
+      lignes: detail,
+      recapTva,
+      totalHT: totalHT / 1000,
+      totalTVA: totalTVA / 1000,
+      timbre: timbre / 1000,
+      totalTTC: (totalHT + totalTVA + timbre) / 1000,
+    };
+  }
+
+  /**
+   * Contrôle de forme du matricule fiscal tunisien :
+   * 7 chiffres + clé (lettre) + code TVA (A, B, D, N, P) + catégorie (M, C, P, N, E) + n° d'établissement (3 chiffres).
+   * Les barres obliques et un préfixe « TVA » sont tolérés. Un champ vide est accepté (client particulier).
+   */
+  function validerMF(valeur) {
+    const brut = String(valeur || '').trim().toUpperCase().replace(/^(TVA|MF)\s*:?\s*/, '');
+    if (!brut) return { valide: true, normalise: '' };
+    const m = /^(\d{7})\s*\/?\s*([A-Z])\s*\/?\s*([ABDNP])\s*\/?\s*([MCPNE])\s*\/?\s*(\d{3})$/.exec(brut);
+    if (!m) return { valide: false, normalise: brut };
+    return { valide: true, normalise: `${m[1]}/${m[2]}/${m[3]}/${m[4]}/${m[5]}` };
+  }
+
+  return {
+    lireNombre, versMillimes, formatMontant, formatTaux, formatQuantite, formatDate,
+    annee, formaterNumero, calculerLigne, calculerTotaux, validerMF,
+  };
+});
+</script>
+  <script>
+/*
+ * Génération du document A4 (HTML) au format de la facture analysée :
+ * en-tête société à gauche, cadre client à droite, bandeau titre gris,
+ * ligne Numéro / Date / Bon de livraison, tableau Désignation / Prix HT / TVA / Total HT
+ * étiré jusqu'en bas de page, note « NB », cadre des totaux, zone cachet.
+ */
+(function (racine, fabrique) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = fabrique(require('./calculs'), require('./montant-lettres'));
+  } else {
+    racine.Rendu = fabrique(racine.Calculs, racine.MontantLettres);
+  }
+})(typeof self !== 'undefined' ? self : this, function (C, ML) {
+  'use strict';
+
+  const TYPES = {
+    proforma: { titre: 'FACTURE PROFORMA', libelle: 'Facture proforma', arrete: 'Arrêtée la présente facture proforma' },
+    facture: { titre: 'FACTURE', libelle: 'Facture', arrete: 'Arrêtée la présente facture' },
+    devis: { titre: 'DEVIS', libelle: 'Devis', arrete: 'Arrêté le présent devis' },
+  };
+
+  const OPTIONS_DEFAUT = { qte: false, remise: false, ttc: true, lettres: true, timbre: false, cachet: true };
+
+  // Position du bas du tableau dans le modèle d'origine (mm depuis le haut de la page)
+  const BAS_TABLEAU_MM = 213;
+  const HAUTEUR_PAGE_MM = 297;
+  const MARGE_BAS_MM = 12;
+  const HAUTEUR_CACHET_MM = 45;
+  const HAUTEUR_CACHET_MIN_IMAGE_MM = 22;
+
+  function esc(s) {
+    return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    })[c]);
+  }
+
+  function imageSure(src) {
+    return typeof src === 'string' && /^data:image\/(png|jpe?g|gif|webp|svg\+xml);base64,/i.test(src) ? src : '';
+  }
+
+  /**
+   * Désignation riche : titre souligné, puis description où
+   *   « # texte » = sous-titre en gras, ligne vide = espace, autre ligne = élément en retrait.
+   */
+  function rendreDesignation(ligne) {
+    let h = '';
+    if (ligne.titre && String(ligne.titre).trim()) h += `<div class="d-titre">${esc(ligne.titre.trim())}</div>`;
+    String(ligne.description || '').split(/\r?\n/).forEach((brut) => {
+      const t = brut.trim();
+      if (!t) h += '<div class="d-vide"></div>';
+      else if (t.startsWith('#')) h += `<div class="d-section">${esc(t.replace(/^#+\s*/, ''))}</div>`;
+      else h += `<div class="d-item">${esc(t)}</div>`;
+    });
+    return h;
+  }
+
+  /** Options d'affichage ; la colonne quantité apparaît d'office dès qu'une quantité n'est pas 1. */
+  function options(doc) {
+    const o = Object.assign({}, OPTIONS_DEFAUT, doc.options || {});
+    const qteDe = (l) => C.lireNombre(l.qte === undefined || l.qte === '' ? 1 : l.qte);
+    if (!o.qte && (doc.lignes || []).some((l) => qteDe(l) !== 1)) o.qte = true;
+    return o;
+  }
+
+  function totauxDocument(doc, parametres) {
+    const o = options(doc);
+    return C.calculerTotaux(doc.lignes, { timbre: o.timbre ? (parametres && parametres.timbre) || 0 : 0 });
+  }
+
+  function rendreDocument(doc, parametres) {
+    const p = parametres || {};
+    const s = p.societe || {};
+    const t = TYPES[doc.type] || TYPES.proforma;
+    const o = options(doc);
+    const cl = doc.client || {};
+    const lignes = doc.lignes || [];
+    const tot = totauxDocument(doc, p);
+
+    // --- En-tête société
+    const infos = [];
+    String(s.adresse || '').split(/\r?\n/).filter((x) => x.trim()).forEach((x) => infos.push(esc(x.trim())));
+    if (s.mf) infos.push(`TVA : ${esc(s.mf)}`);
+    if (s.tel) infos.push(`Tel : ${esc(s.tel)}`);
+    if (s.rc) infos.push(`RC : ${esc(s.rc)}`);
+    if (s.email) infos.push(`Email : ${esc(s.email)}`);
+    if (s.rib) infos.push(`RIB : ${esc(s.rib)}`);
+    const logo = imageSure(s.logo);
+
+    const champClient = (lib, val) =>
+      `<div class="ligne"><span class="lib">${lib}</span><span class="val">: ${esc(val)}</span></div>`;
+
+    // --- Colonnes du tableau
+    const cols = [{ cle: 'des', titre: 'Désignation', largeur: null }];
+    if (o.qte) cols.push({ cle: 'qte', titre: 'Qté', largeur: 12 });
+    cols.push({ cle: 'pu', titre: o.qte ? 'P.U. HT' : 'Prix HT', largeur: 20 });
+    if (o.remise) cols.push({ cle: 'rem', titre: 'Rem.', largeur: 11 });
+    cols.push({ cle: 'tva', titre: 'TVA', largeur: 10 }, { cle: 'tot', titre: 'Total HT', largeur: 23 });
+
+    const cellule = (cle, l, i) => {
+      switch (cle) {
+        case 'des': return `<td class="des">${rendreDesignation(l)}</td>`;
+        case 'qte': return `<td class="num">${esc(C.formatQuantite(l.qte === undefined || l.qte === '' ? 1 : l.qte))}</td>`;
+        case 'pu': return `<td class="num">${C.formatMontant(l.prixHT)}</td>`;
+        case 'rem': return `<td class="num">${C.lireNombre(l.remise) ? esc(C.formatTaux(l.remise)) : ''}</td>`;
+        case 'tva': return `<td class="num centre">${esc(C.formatTaux(l.tva))}</td>`;
+        default: return `<td class="num">${C.formatMontant(tot.lignes[i].totalHT)}</td>`;
+      }
+    };
+
+    const corps = lignes.map((l, i) => `<tr class="article">${cols.map((c) => cellule(c.cle, l, i)).join('')}</tr>`).join('');
+
+    // --- Totaux
+    const lignesTotaux = [['Total HT', tot.totalHT, '']];
+    if (tot.recapTva.length > 1) {
+      tot.recapTva.forEach((r) => lignesTotaux.push([`TVA ${C.formatTaux(r.taux)}`, r.montant, '']));
+    }
+    lignesTotaux.push(['Total TVA', tot.totalTVA, '']);
+    if (o.timbre) lignesTotaux.push(['Timbre fiscal', tot.timbre, '']);
+    if (o.ttc) lignesTotaux.push([o.timbre ? 'Net à payer TTC' : 'Total TTC', tot.totalTTC, 'net']);
+
+    const nbTitre = String(doc.nbTitre || '').trim();
+    const nbLignes = String(doc.nbTexte || '').split(/\r?\n/).filter((x) => x.trim());
+    const nb = nbTitre || nbLignes.length
+      ? `<div class="nb"><div class="nb-entete"><span class="nb-lib">NB</span> : <span class="nb-titre">${esc(nbTitre)}</span></div>${
+        nbLignes.map((x) => `<div>${esc(x.trim())}</div>`).join('')}</div>`
+      : '<div class="nb"></div>';
+
+    const cachet = o.cachet ? imageSure(s.cachet) : '';
+
+    return `<div class="page type-${esc(doc.type)}">
+  <div class="contenu">
+    <div class="entete">
+      <div class="societe">
+        ${logo ? `<div class="logo"><img src="${logo}" alt=""></div>` : ''}
+        <div class="nom">${esc(s.nom || '')}</div>
+        ${infos.map((x) => `<div>${x}</div>`).join('')}
+      </div>
+      <div class="cadre-client">
+        ${champClient('Code', cl.code)}
+        ${champClient('Nom', cl.nom)}
+        ${champClient('Adresse', cl.adresse)}
+        <div class="ligne"><span class="lib">Code TVA</span><span class="val">: ${esc(cl.mf)}</span></div>
+      </div>
+    </div>
+
+    <table class="bandeau">
+      <tr><td colspan="3" class="titre gris-clair">${t.titre}</td></tr>
+      <tr>
+        <td class="ref num-doc">Numéro : ${esc(doc.numero)}</td>
+        <td class="ref date-doc">Date :${esc(C.formatDate(doc.date))}</td>
+        <td class="ref bl-doc">Bon de livraison : ${esc(doc.bonLivraison)}</td>
+      </tr>
+    </table>
+
+    <table class="lignes">
+      <colgroup>${cols.map((c) => (c.largeur ? `<col style="width:${c.largeur}mm">` : '<col>')).join('')}</colgroup>
+      <thead><tr>${cols.map((c) => `<th class="gris">${c.titre}</th>`).join('')}</tr></thead>
+      <tbody>
+        ${corps}
+        <tr class="remplissage">${cols.map(() => '<td></td>').join('')}</tr>
+      </tbody>
+    </table>
+
+    <div class="pied">
+      <div class="pied-gauche">
+        ${nb}
+        ${o.lettres ? `<div class="lettres">${t.arrete} à la somme de : <strong>${esc(ML.montantEnLettres(tot.totalTTC))}</strong>.</div>` : ''}
+      </div>
+      <div class="pied-droite">
+        <table class="totaux">
+          ${lignesTotaux.map(([lib, val, cls]) =>
+            `<tr class="${cls}"><td class="lib gris">${esc(lib)}</td><td class="val">${C.formatMontant(val)}</td></tr>`).join('')}
+        </table>
+        <div class="zone-cachet">${cachet ? `<img src="${cachet}" alt="Cachet">` : ''}</div>
+      </div>
+    </div>
+  </div>
+</div>`;
+  }
+
+  /**
+   * Prolonge les colonnes du tableau jusqu'au niveau du modèle (213 mm),
+   * sans faire déborder le reste du document sur une deuxième page.
+   * À appeler dans le navigateur après insertion du HTML.
+   */
+  function ajusterRemplissage(page) {
+    if (!page) return;
+    const table = page.querySelector('table.lignes');
+    const contenu = page.querySelector('.contenu');
+    const rangee = page.querySelector('tr.remplissage');
+    if (!table || !contenu || !rangee) return;
+    const MM = 96 / 25.4;
+    const limite = (HAUTEUR_PAGE_MM - MARGE_BAS_MM - 2) * MM; // bas utile de la page 1
+    const bas = () => contenu.offsetTop + contenu.offsetHeight;
+
+    // 1) Zone cachet : 45 mm par défaut ; on la réduit si elle seule ferait passer le document sur 2 pages
+    const zone = page.querySelector('.zone-cachet');
+    const img = zone && zone.querySelector('img');
+    rangee.style.height = '0px';
+    const zoneNormale = () => {
+      zone.style.minHeight = `${HAUTEUR_CACHET_MM}mm`;
+      zone.style.marginTop = '';
+      if (img) img.style.maxHeight = '';
+    };
+    if (zone) {
+      zoneNormale();
+      const depassement = bas() - limite;
+      if (depassement > 0) {
+        const marge = 2 * MM;
+        const avant = parseFloat(getComputedStyle(zone).marginTop) || 0;
+        const plancher = img ? HAUTEUR_CACHET_MIN_IMAGE_MM * MM : 0;
+        const hauteur = Math.max(plancher, HAUTEUR_CACHET_MM * MM + (avant - marge) - depassement);
+        zone.style.marginTop = `${marge}px`;
+        zone.style.minHeight = `${Math.floor(hauteur)}px`;
+        if (img) img.style.maxHeight = `${Math.floor(hauteur)}px`;
+        // document de plusieurs pages de toute façon : zone normale sur la dernière page
+        if (bas() > limite) zoneNormale();
+      }
+    }
+
+    // 2) Prolonge les colonnes jusqu'à 213 mm comme sur le modèle, sans créer de 2e page
+    const versModele = BAS_TABLEAU_MM * MM - (table.offsetTop + table.offsetHeight);
+    const placeRestante = limite - bas();
+    const h = Math.max(0, Math.min(versModele, placeRestante));
+    rangee.style.height = `${Math.floor(h)}px`;
+  }
+
+  /** Nom de fichier proposé à l'impression PDF. */
+  function nomFichier(doc) {
+    const t = TYPES[doc.type] || TYPES.proforma;
+    const num = String(doc.numero || '').replace(/[\\/:*?"<>|]+/g, '-');
+    const client = String((doc.client && doc.client.nom) || '').replace(/[\\/:*?"<>|]+/g, '-').trim();
+    return [t.libelle, num, client].filter(Boolean).join(' - ');
+  }
+
+  return { TYPES, OPTIONS_DEFAUT, optionsEffectives: options, esc, rendreDesignation, rendreDocument, totauxDocument, ajusterRemplissage, nomFichier };
+});
+</script>
+  <script>
+/*
+ * Persistance locale (navigateur) + sauvegarde / restauration en fichier JSON.
+ * Toutes les données restent sur le poste de l'utilisateur.
+ */
+(function (racine, fabrique) {
+  const api = fabrique();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else racine.Stockage = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const CLE = 'facturation-tn-v1';
+  const VERSION = 1;
+
+  function etatInitial() {
+    return {
+      version: VERSION,
+      parametres: {
+        societe: { nom: '', adresse: '', mf: '', tel: '', rc: '', email: '', rib: '', logo: '', cachet: '' },
+        modeles: { proforma: '{AA}{N:4}/{AA}', facture: '{AA}{N:4}/{AA}', devis: 'D{AA}{N:4}/{AA}' },
+        timbre: 1,
+        tvaDefaut: 19,
+        taux: [0, 7, 13, 19],
+        nbTitre: '',
+        nbTexte: '',
+      },
+      compteurs: {},
+      clients: [],
+      articles: [],
+      documents: [],
+      brouillon: null,
+    };
+  }
+
+  function estObjet(x) {
+    return x !== null && typeof x === 'object' && !Array.isArray(x);
+  }
+
+  /** Complète un état chargé avec les valeurs par défaut (compatibilité ascendante). */
+  function normaliser(brut) {
+    if (!estObjet(brut)) throw new Error('Format de sauvegarde invalide');
+    const base = etatInitial();
+    const p = estObjet(brut.parametres) ? brut.parametres : {};
+    const etat = {
+      version: VERSION,
+      parametres: Object.assign({}, base.parametres, p, {
+        societe: Object.assign({}, base.parametres.societe, estObjet(p.societe) ? p.societe : {}),
+        modeles: Object.assign({}, base.parametres.modeles, estObjet(p.modeles) ? p.modeles : {}),
+        taux: Array.isArray(p.taux) && p.taux.length ? p.taux.map(Number).filter(Number.isFinite) : base.parametres.taux,
+      }),
+      compteurs: estObjet(brut.compteurs) ? brut.compteurs : {},
+      clients: Array.isArray(brut.clients) ? brut.clients.filter(estObjet) : [],
+      articles: Array.isArray(brut.articles) ? brut.articles.filter(estObjet) : [],
+      documents: Array.isArray(brut.documents) ? brut.documents.filter(estObjet) : [],
+      brouillon: estObjet(brut.brouillon) ? brut.brouillon : null,
+    };
+    return etat;
+  }
+
+  function disponible() {
+    try {
+      const k = '__facturation_test__';
+      localStorage.setItem(k, k);
+      localStorage.removeItem(k);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function charger() {
+    try {
+      const brut = localStorage.getItem(CLE);
+      return brut ? normaliser(JSON.parse(brut)) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function enregistrer(etat) {
+    try {
+      localStorage.setItem(CLE, JSON.stringify(etat));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function exporter(etat) {
+    const copie = Object.assign({}, etat, { exporteLe: new Date().toISOString() });
+    delete copie.brouillon;
+    return JSON.stringify(copie, null, 2);
+  }
+
+  function importer(texte) {
+    return normaliser(JSON.parse(texte));
+  }
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  return { CLE, etatInitial, normaliser, disponible, charger, enregistrer, exporter, importer, uid };
+});
+</script>
+  <script>
+/*
+ * Où sont enregistrées les données :
+ *  - « compte » : publié comme page Claude, dans l'espace privé de l'utilisateur (capacité db) ;
+ *  - « local »  : fichier ouvert sur le poste, dans le stockage du navigateur ;
+ *  - « memoire » : aucun stockage possible (navigation privée stricte…).
+ * L'application garde l'état complet en mémoire ; enregistrer() le recopie (écritures groupées).
+ */
+(function (racine, fabrique) {
+  const api = fabrique(typeof module === 'object' && module.exports ? require('./stockage') : racine.Stockage);
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else racine.Persistance = api;
+})(typeof self !== 'undefined' ? self : this, function (S) {
+  'use strict';
+
+  const DELAI_CHARGEMENT = 10000;
+
+  function dansVisionneuse() {
+    return typeof window !== 'undefined' && !!window.claude && typeof window.claude.use === 'function';
+  }
+
+  function capacite(nom) {
+    if (!dansVisionneuse()) return Promise.resolve(null);
+    try {
+      return Promise.resolve(window.claude.use(nom)).catch(() => null);
+    } catch (e) {
+      return Promise.resolve(null);
+    }
+  }
+
+  function avecDelai(promesse, ms) {
+    return new Promise((ok, ko) => {
+      const minuterie = setTimeout(() => ko({ code: 'delai', message: 'délai dépassé' }), ms);
+      promesse.then((v) => { clearTimeout(minuterie); ok(v); }, (e) => { clearTimeout(minuterie); ko(e); });
+    });
+  }
+
+  const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+  const copie = (x) => JSON.parse(JSON.stringify(x === undefined ? null : x));
+
+  // ---------------------------------------------------------------- navigateur
+  function moteurLocal() {
+    const ok = S.disponible();
+    return {
+      mode: ok ? 'local' : 'memoire',
+      charger: () => Promise.resolve(ok ? S.charger() : null),
+      enregistrer: (etat) => (ok ? S.enregistrer(etat) : true),
+    };
+  }
+
+  // ---------------------------------------------------------------- compte (db)
+  async function moteurCompte(surErreur) {
+    const [db, user] = await Promise.all([capacite('db'), capacite('user')]);
+    if (!db || !user) return null;
+    let uid = null;
+    try { uid = await user.id(); } catch (e) { uid = null; }
+    if (!uid) return null;
+
+    const base = `data/users/${uid}`;
+    const refs = {
+      etat: db.doc(`${base}/etat`),
+      brouillon: db.doc(`${base}/brouillon`),
+      logo: db.doc(`${base}/logo`),
+      cachet: db.doc(`${base}/cachet`),
+    };
+    refs.documents = refs.etat.collection('documents');
+
+    const ecrit = { etat: null, brouillon: null, logo: null, cachet: null, docs: new Map() };
+    let courant = null;
+    let minuterie = null;
+    let enCours = false;
+    let aRefaire = false;
+
+    function instantane(etat) {
+      const p = etat.parametres;
+      return {
+        etat: JSON.stringify({
+          version: etat.version,
+          parametres: Object.assign({}, p, { societe: Object.assign({}, p.societe, { logo: '', cachet: '' }) }),
+          compteurs: etat.compteurs,
+          clients: etat.clients,
+          articles: etat.articles,
+        }),
+        logo: p.societe.logo || '',
+        cachet: p.societe.cachet || '',
+        brouillon: etat.brouillon ? JSON.stringify(etat.brouillon) : '',
+        docs: new Map(etat.documents.map((d) => [String(d.id), JSON.stringify(d)])),
+      };
+    }
+
+    async function reessayer(action) {
+      try {
+        return await action();
+      } catch (e) {
+        if (e && e.code === 'unavailable') {
+          await pause(400 + Math.random() * 800);
+          return action();
+        }
+        throw e;
+      }
+    }
+
+    async function synchroniser() {
+      if (enCours) { aRefaire = true; return; }
+      enCours = true;
+      try {
+        do {
+          aRefaire = false;
+          const s = instantane(courant);
+          if (s.etat !== ecrit.etat) {
+            await reessayer(() => refs.etat.set(JSON.parse(s.etat)));
+            ecrit.etat = s.etat;
+          }
+          for (const k of ['logo', 'cachet']) {
+            if (s[k] !== ecrit[k]) {
+              await reessayer(() => (s[k] ? refs[k].set({ data: s[k] }) : refs[k].delete()));
+              ecrit[k] = s[k];
+            }
+          }
+          for (const [id, json] of s.docs) {
+            if (ecrit.docs.get(id) !== json) {
+              await reessayer(() => refs.documents.doc(id).set(JSON.parse(json)));
+              ecrit.docs.set(id, json);
+            }
+          }
+          for (const id of Array.from(ecrit.docs.keys())) {
+            if (!s.docs.has(id)) {
+              await reessayer(() => refs.documents.doc(id).delete());
+              ecrit.docs.delete(id);
+            }
+          }
+          if (s.brouillon !== ecrit.brouillon) {
+            await reessayer(() => (s.brouillon ? refs.brouillon.set({ valeur: JSON.parse(s.brouillon) }) : refs.brouillon.delete()));
+            ecrit.brouillon = s.brouillon;
+          }
+        } while (aRefaire);
+      } catch (e) {
+        if (surErreur) surErreur(e);
+      } finally {
+        enCours = false;
+      }
+    }
+
+    return {
+      mode: 'compte',
+      async charger() {
+        const [e, b, l, c, docs] = await avecDelai(Promise.all([
+          refs.etat.get(), refs.brouillon.get(), refs.logo.get(), refs.cachet.get(), refs.documents.get(),
+        ]), DELAI_CHARGEMENT);
+        if (!e.exists) return null; // premier lancement
+        const brut = copie(e.data());
+        brut.parametres = brut.parametres || {};
+        brut.parametres.societe = Object.assign({}, brut.parametres.societe, {
+          logo: l.exists ? String((l.data() || {}).data || '') : '',
+          cachet: c.exists ? String((c.data() || {}).data || '') : '',
+        });
+        brut.documents = docs.docs.filter((d) => d.exists).map((d) => copie(d.data()))
+          .sort((a, b2) => String(b2.creeLe || '').localeCompare(String(a.creeLe || '')));
+        brut.brouillon = b.exists ? copie((b.data() || {}).valeur) : null;
+        const etat = S.normaliser(brut);
+        const s = instantane(etat);
+        ecrit.etat = s.etat;
+        ecrit.logo = s.logo;
+        ecrit.cachet = s.cachet;
+        ecrit.brouillon = s.brouillon;
+        ecrit.docs = new Map(s.docs);
+        return etat;
+      },
+      enregistrer(etat) {
+        courant = etat;
+        clearTimeout(minuterie);
+        minuterie = setTimeout(synchroniser, 500);
+        return true;
+      },
+    };
+  }
+
+  /**
+   * Choisit le stockage et charge l'état (null au premier lancement).
+   * Si les données du compte ne peuvent pas être lues, on n'écrit surtout pas dessus :
+   * on passe au stockage du navigateur et on le signale (avertissement).
+   */
+  async function ouvrir(surErreur) {
+    let avertissement = '';
+    if (dansVisionneuse()) {
+      try {
+        const m = await moteurCompte(surErreur);
+        if (m) return { moteur: m, etat: await m.charger(), avertissement };
+      } catch (e) {
+        avertissement = 'Vos documents enregistrés en ligne n’ont pas pu être chargés. '
+          + 'Le travail de cette session est conservé dans ce navigateur seulement. Rechargez la page plus tard.';
+      }
+    }
+    const m = moteurLocal();
+    return { moteur: m, etat: await m.charger(), avertissement };
+  }
+
+  return { ouvrir, capacite, dansVisionneuse };
+});
+</script>
+  <script>
+/*
+ * Génération d'un PDF vectoriel A4 (jsPDF) reprenant les cotes du gabarit HTML :
+ * texte net et sélectionnable, fichier léger, sans passer par la boîte d'impression.
+ * Nécessite window.jspdf (jsPDF 2.x, chargé depuis un CDN).
+ */
+(function (racine, fabrique) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = fabrique(require('./calculs'), require('./montant-lettres'), require('./rendu'));
+  } else {
+    racine.PdfFacture = fabrique(racine.Calculs, racine.MontantLettres, racine.Rendu);
+  }
+})(typeof self !== 'undefined' ? self : this, function (C, ML, R) {
+  'use strict';
+
+  const PT = 25.4 / 72; // 1 point en mm
+  const PAGE = { gauche: 11, droite: 198, largeur: 187, haut: 12, limite: 283 };
+  const BAS_TABLEAU_MODELE = 213;
+  const GRIS_CLAIR = 217;
+  const GRIS = 166;
+  const TRAIT = 0.2;
+
+  /** Les polices standard du PDF couvrent le Latin-1 : remplacement des autres caractères. */
+  function txt(s) {
+    return String(s === null || s === undefined ? '' : s)
+      .replace(/[‘’ʼ′]/g, "'")
+      .replace(/[“”″]/g, '"')
+      .replace(/[–—−]/g, '-')
+      .replace(/…/g, '...')
+      .replace(/œ/g, 'oe').replace(/Œ/g, 'OE')
+      .replace(/[    ]/g, ' ')
+      .replace(/€/g, 'EUR')
+      .replace(/[^\x09\x0a\x0d\x20-\x7e\xa0-\xff]/g, '?');
+  }
+
+  function imageSure(src) {
+    const m = typeof src === 'string' && /^data:image\/(png|jpe?g);base64,/i.exec(src);
+    return m ? { src, format: /png/i.test(m[1]) ? 'PNG' : 'JPEG' } : null;
+  }
+
+  function generer(doc, parametres, options) {
+    const lib = (options && options.jspdf) || (typeof window !== 'undefined' && window.jspdf);
+    if (!lib || !lib.jsPDF) throw new Error('Le module PDF n’est pas chargé (connexion Internet nécessaire).');
+    const pdf = new lib.jsPDF({ unit: 'mm', format: 'a4', compress: true });
+
+    const p = parametres || {};
+    const s = p.societe || {};
+    const t = R.TYPES[doc.type] || R.TYPES.proforma;
+    const o = R.optionsEffectives(doc);
+    const cl = doc.client || {};
+    const lignes = doc.lignes || [];
+    const tot = R.totauxDocument(doc, p);
+
+    pdf.setProperties({ title: R.nomFichier(doc), subject: t.libelle, creator: 'Facturier' });
+    pdf.setLineWidth(TRAIT);
+    pdf.setDrawColor(0);
+    pdf.setTextColor(0);
+
+    // ------------------------------------------------------------------ outils
+    function police(taillePt, gras) {
+      pdf.setFont('times', gras ? 'bold' : 'normal');
+      pdf.setFontSize(taillePt);
+    }
+    // ligne de base d'un texte de taille S (pt) centré dans une ligne de hauteur L (mm), comme en CSS
+    function base(haut, L, taillePt) {
+      const S = taillePt * PT;
+      return haut + (L - 1.107 * S) / 2 + 0.891 * S;
+    }
+    function souligner(x, y, largeur, taillePt) {
+      pdf.setLineWidth(Math.max(0.12, taillePt * PT * 0.05));
+      pdf.line(x, y + taillePt * PT * 0.12, x + largeur, y + taillePt * PT * 0.12);
+      pdf.setLineWidth(TRAIT);
+    }
+    /** Écrit une ligne ; retourne sa hauteur. */
+    function ecrire(texte, x, haut, taillePt, opt) {
+      const op = Object.assign({ gras: false, align: 'left', L: taillePt * PT * 1.2, souligne: false }, opt || {});
+      police(taillePt, op.gras);
+      const t1 = txt(texte);
+      const y = base(haut, op.L, taillePt);
+      pdf.text(t1, x, y, { align: op.align, baseline: 'alphabetic' });
+      if (op.souligne && t1) {
+        const w = pdf.getTextWidth(t1);
+        souligner(op.align === 'right' ? x - w : op.align === 'center' ? x - w / 2 : x, y, w, taillePt);
+      }
+      return op.L;
+    }
+    function couper(texte, largeurMax, taillePt, gras) {
+      police(taillePt, gras);
+      return pdf.splitTextToSize(txt(texte), largeurMax);
+    }
+    /** Texte à plusieurs styles avec retour à la ligne ; retourne la hauteur. */
+    function ecrireRiche(morceaux, x, haut, largeurMax, taillePt, L, dessiner) {
+      const mots = [];
+      morceaux.forEach((m) => txt(m.texte).split(/(\s+)/).forEach((w) => { if (w) mots.push({ w, gras: !!m.gras }); }));
+      const largeurDe = (m) => { police(taillePt, m.gras); return pdf.getTextWidth(m.w); };
+      const lignesR = [];
+      let ligne = [];
+      let lx = 0;
+      mots.forEach((m) => {
+        const espace = /^\s+$/.test(m.w);
+        const w = largeurDe(espace ? { w: ' ', gras: m.gras } : m);
+        if (espace) {
+          if (ligne.length) { ligne.push({ w: ' ', gras: m.gras, l: w }); lx += w; }
+          return;
+        }
+        if (lx + w > largeurMax && ligne.length) {
+          while (ligne.length && ligne[ligne.length - 1].w === ' ') ligne.pop();
+          lignesR.push(ligne);
+          ligne = [];
+          lx = 0;
+        }
+        ligne.push({ w: m.w, gras: m.gras, l: w });
+        lx += w;
+      });
+      if (ligne.length) lignesR.push(ligne);
+      if (dessiner !== false) {
+        lignesR.forEach((lg, i) => {
+          let cx = x;
+          const y = base(haut + i * L, L, taillePt);
+          lg.forEach((m) => { police(taillePt, m.gras); pdf.text(m.w, cx, y); cx += m.l; });
+        });
+      }
+      return lignesR.length * L;
+    }
+    function imageAjustee(img, cx, haut, largeurMax, hauteurMax, centrer) {
+      let w = largeurMax;
+      let h = hauteurMax;
+      try {
+        const pr = pdf.getImageProperties(img.src);
+        const r = Math.min(largeurMax / pr.width, hauteurMax / pr.height);
+        w = pr.width * r;
+        h = pr.height * r;
+      } catch (e) { /* proportions inconnues : cadre complet */ }
+      pdf.addImage(img.src, img.format, centrer ? cx - w / 2 : cx, haut, w, h, undefined, 'FAST');
+      return h;
+    }
+
+    // ------------------------------------------------------------------ en-tête
+    const xs = PAGE.gauche + 1.3;
+    let y = 26;
+    const logo = imageSure(s.logo);
+    if (logo) { imageAjustee(logo, xs, y, 60, 16, false); y += 17.5; }
+    couper(s.nom || '', 88, 12, true).forEach((l) => { y += ecrire(l, xs, y, 12, { gras: true, L: 12 * PT * 1.15 }); });
+    const infos = [];
+    String(s.adresse || '').split(/\r?\n/).filter((x) => x.trim()).forEach((x) => infos.push(x.trim()));
+    if (s.mf) infos.push(`TVA : ${s.mf}`);
+    if (s.tel) infos.push(`Tel : ${s.tel}`);
+    if (s.rc) infos.push(`RC : ${s.rc}`);
+    if (s.email) infos.push(`Email : ${s.email}`);
+    if (s.rib) infos.push(`RIB : ${s.rib}`);
+    infos.forEach((info) => couper(info, 88, 10, false).forEach((l) => { y += ecrire(l, xs, y, 10, { L: 10 * PT * 1.2 }); }));
+    const basSociete = y;
+
+    // cadre client
+    const cx0 = 103;
+    const cy0 = 28.5;
+    const Lc = 12 * PT * 1.15;
+    let cy = cy0 + 1;
+    [['Code', cl.code], ['Nom', cl.nom], ['Adresse', cl.adresse], ['Code TVA', cl.mf]].forEach(([lib, val]) => {
+      const morceaux = couper(`: ${val || ''}`, 95 - 2.4 - 21, 12, false);
+      ecrire(lib, cx0 + 1.2, cy, 12, { L: Lc });
+      morceaux.forEach((m, i) => ecrire(m, cx0 + 1.2 + 21, cy + i * Lc, 12, { L: Lc }));
+      cy += morceaux.length * Lc;
+    });
+    const hClient = Math.max(23.5, cy + 1 - cy0);
+    pdf.rect(cx0, cy0, 95, hClient);
+
+    // ------------------------------------------------------------------ bandeau
+    const B = Math.max(26 + 30, basSociete, cy0 + hClient) + 18;
+    pdf.setFillColor(GRIS_CLAIR);
+    pdf.rect(PAGE.gauche, B, PAGE.largeur, 6, 'FD');
+    ecrire(t.titre, PAGE.gauche + PAGE.largeur / 2, B, 14, { gras: true, align: 'center', L: 6 });
+    const largeursRef = [47.5, 73, PAGE.largeur - 47.5 - 73];
+    const textesRef = [`Numéro : ${doc.numero || ''}`, `Date :${C.formatDate(doc.date)}`, `Bon de livraison : ${doc.bonLivraison || ''}`];
+    let rx = PAGE.gauche;
+    largeursRef.forEach((w, i) => {
+      pdf.rect(rx, B + 6, w, 9.4);
+      const L = 12 * PT * 1.2;
+      ecrire(textesRef[i], rx + (i === 2 ? 1.3 : 1), B + 6 + 9.4 - 0.4 - L, 12, { gras: true, L });
+      rx += w;
+    });
+
+    // ------------------------------------------------------------------ tableau
+    const cols = [{ cle: 'des', titre: 'Désignation' }];
+    if (o.qte) cols.push({ cle: 'qte', titre: 'Qté', l: 12 });
+    cols.push({ cle: 'pu', titre: o.qte ? 'P.U. HT' : 'Prix HT', l: 20 });
+    if (o.remise) cols.push({ cle: 'rem', titre: 'Rem.', l: 11 });
+    cols.push({ cle: 'tva', titre: 'TVA', l: 10 }, { cle: 'tot', titre: 'Total HT', l: 23 });
+    cols[0].l = PAGE.largeur - cols.slice(1).reduce((a, c) => a + c.l, 0);
+    let cxCol = PAGE.gauche;
+    cols.forEach((c) => { c.x = cxCol; cxCol += c.l; });
+
+    const H_ENTETE = 8.7;
+    const L_DES = 4.43;
+    let hautTableau = B + 6 + 9.4 + 2.8;
+
+    function enteteTableau(haut) {
+      pdf.setFillColor(GRIS);
+      pdf.rect(PAGE.gauche, haut, PAGE.largeur, H_ENTETE, 'F');
+      const L = 9 * PT * 1.2;
+      cols.forEach((c) => ecrire(c.titre, c.x + c.l / 2, haut + (H_ENTETE - L) / 2, 9, { gras: true, align: 'center', L }));
+    }
+    function cadreTableau(haut, bas) {
+      pdf.rect(PAGE.gauche, haut, PAGE.largeur, bas - haut);
+      pdf.line(PAGE.gauche, haut + H_ENTETE, PAGE.droite, haut + H_ENTETE);
+      cols.slice(1).forEach((c) => pdf.line(c.x, haut, c.x, bas));
+    }
+
+    enteteTableau(hautTableau);
+    y = hautTableau + H_ENTETE;
+    const valeurs = (l, i) => ({
+      qte: C.formatQuantite(l.qte === undefined || l.qte === '' ? 1 : l.qte),
+      pu: C.formatMontant(l.prixHT),
+      rem: C.lireNombre(l.remise) ? C.formatTaux(l.remise) : '',
+      tva: C.formatTaux(l.tva),
+      tot: C.formatMontant(tot.lignes[i].totalHT),
+    });
+
+    const desLargeur = cols[0].l - 2.4;
+    lignes.forEach((l, i) => {
+      y += i === 0 ? 0.6 : 0.8 + 3;
+      // éléments de la désignation
+      const elements = [];
+      if (l.titre && String(l.titre).trim()) elements.push({ texte: String(l.titre).trim(), taille: 11, souligne: true, retrait: 0 });
+      String(l.description || '').split(/\r?\n/).forEach((brut) => {
+        const t2 = brut.trim();
+        if (!t2) elements.push({ vide: true });
+        else if (t2.startsWith('#')) elements.push({ texte: t2.replace(/^#+\s*/, ''), taille: 9, gras: true, retrait: 0 });
+        else elements.push({ texte: t2, taille: 11, retrait: 3.5 });
+      });
+      if (!elements.length) elements.push({ vide: true });
+
+      let premiere = true;
+      const ecrireMontants = (haut) => {
+        const v = valeurs(l, i);
+        const L = 10 * PT * 1.2;
+        cols.slice(1).forEach((c) => {
+          const centre = c.cle === 'tva';
+          ecrire(v[c.cle], centre ? c.x + c.l / 2 : c.x + c.l - 1.2, haut, 10, { align: centre ? 'center' : 'right', L });
+        });
+      };
+      elements.forEach((el) => {
+        const sousLignes = el.vide ? [null] : couper(el.texte, desLargeur - el.retrait, el.taille, el.gras);
+        sousLignes.forEach((sl) => {
+          const h = el.vide ? 2 : L_DES;
+          if (y + h > PAGE.limite + 2) { // saut de page dans le tableau
+            cadreTableau(hautTableau, y + 0.8);
+            pdf.addPage();
+            hautTableau = PAGE.haut;
+            enteteTableau(hautTableau);
+            y = hautTableau + H_ENTETE + 0.6;
+          }
+          if (premiere) { ecrireMontants(y); premiere = false; }
+          if (sl !== null) ecrire(sl, cols[0].x + 1.2 + el.retrait, y, el.taille, { gras: el.gras, souligne: el.souligne, L: L_DES });
+          y += h;
+        });
+      });
+    });
+    const finLignes = y + 0.8;
+
+    // ------------------------------------------------------------------ pied : mesures
+    const LARGEUR_GAUCHE = PAGE.largeur - 56 - 6;
+    const nbTitre = String(doc.nbTitre || '').trim();
+    const nbLignes = String(doc.nbTexte || '').split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+    const avecNb = !!(nbTitre || nbLignes.length);
+    const L_NB_TITRE = 12 * PT * 1.05;
+    const L_NB = 10 * PT * 1.15;
+    const nbCoupees = [];
+    nbLignes.forEach((x) => couper(x, LARGEUR_GAUCHE, 10, false).forEach((c) => nbCoupees.push(c)));
+    const hNb = avecNb ? L_NB_TITRE + nbCoupees.length * L_NB : 0;
+    const L_LETTRES = 10.5 * PT * 1.25;
+    const morceauxLettres = [
+      { texte: `${t.arrete} à la somme de : ` },
+      { texte: ML.montantEnLettres(tot.totalTTC), gras: true },
+      { texte: '.' },
+    ];
+    const hLettres = o.lettres ? 4 + ecrireRiche(morceauxLettres, 0, 0, LARGEUR_GAUCHE, 10.5, L_LETTRES, false) : 0;
+    const hGauche = hNb + hLettres;
+
+    const lignesTotaux = [['Total HT', tot.totalHT, false]];
+    if (tot.recapTva.length > 1) tot.recapTva.forEach((r) => lignesTotaux.push([`TVA ${C.formatTaux(r.taux)}`, r.montant, false]));
+    lignesTotaux.push(['Total TVA', tot.totalTVA, false]);
+    if (o.timbre) lignesTotaux.push(['Timbre fiscal', tot.timbre, false]);
+    if (o.ttc) lignesTotaux.push([o.timbre ? 'Net à payer TTC' : 'Total TTC', tot.totalTTC, true]);
+    const H_TOT = 5.2;
+    const hTotaux = lignesTotaux.length * H_TOT;
+    const cachet = o.cachet ? imageSure(s.cachet) : null;
+
+    // hauteur du bas du tableau et de la zone cachet (mêmes règles que l'aperçu)
+    const hPied = (zone, marge) => Math.max(hGauche, hTotaux + marge + zone);
+    let basTableau = finLignes;
+    let zone = 45;
+    let margeZone = 5;
+    let piedPageSuivante = false;
+    if (finLignes + hPied(45, 5) <= PAGE.limite) {
+      basTableau = Math.max(finLignes, Math.min(BAS_TABLEAU_MODELE, PAGE.limite - hPied(45, 5)));
+    } else {
+      const plancher = cachet ? 22 : 0;
+      const dispo = PAGE.limite - finLignes - Math.max(hGauche, hTotaux + 2);
+      if (dispo >= plancher && finLignes + Math.max(hGauche, hTotaux) <= PAGE.limite) {
+        zone = Math.min(45, Math.max(0, dispo));
+        margeZone = 2;
+      } else {
+        piedPageSuivante = true;
+      }
+    }
+    cadreTableau(hautTableau, basTableau);
+
+    // ------------------------------------------------------------------ pied : dessin
+    let F = basTableau;
+    if (piedPageSuivante) { pdf.addPage(); F = PAGE.haut; }
+
+    let yg = F;
+    if (avecNb) {
+      const yb = base(F, L_NB_TITRE, 12);
+      let x = PAGE.gauche;
+      [['NB', 9], [' : ', 10], [nbTitre, 12]].forEach(([morceau, taille]) => {
+        if (!morceau) return;
+        police(taille, true);
+        const m = txt(morceau);
+        pdf.text(m, x, yb);
+        const w = pdf.getTextWidth(m);
+        souligner(x, yb, w, taille);
+        x += w;
+      });
+      yg += L_NB_TITRE;
+      nbCoupees.forEach((c) => { yg += ecrire(c, PAGE.gauche, yg, 10, { L: L_NB }); });
+    }
+    if (o.lettres) {
+      yg += 4;
+      yg += ecrireRiche(morceauxLettres, PAGE.gauche, yg, LARGEUR_GAUCHE, 10.5, L_LETTRES);
+    }
+
+    const xt = PAGE.droite - 56;
+    let yt = F;
+    lignesTotaux.forEach(([lib, val, net]) => {
+      pdf.setFillColor(GRIS);
+      pdf.rect(xt, yt, 33, H_TOT, 'FD');
+      pdf.rect(xt + 33, yt, 23, H_TOT);
+      const L = 9.5 * PT * 1.2;
+      const haut = yt + (H_TOT - L) / 2;
+      ecrire(lib, xt + 33 / 2, haut, 9.5, { gras: net, align: 'center', L });
+      ecrire(C.formatMontant(val), PAGE.droite - 1.2, haut, 9.5, { gras: net, align: 'right', L });
+      yt += H_TOT;
+    });
+    if (cachet && zone > 0) imageAjustee(cachet, xt + 28 - 11, yt + margeZone, 50, zone, true);
+
+    return pdf;
+  }
+
+  /** PDF sous forme d'ArrayBuffer (pour un enregistrement ou un téléchargement). */
+  function genererOctets(doc, parametres, options) {
+    return generer(doc, parametres, options).output('arraybuffer');
+  }
+
+  return { generer, genererOctets, txt };
+});
+</script>
+  <script>
+/*
+ * Données d'exemple : contenu de la facture proforma n° 260019/26 analysée
+ * (textes repris avec l'orthographe corrigée). L'identité de la société et du client
+ * est remplacée par des valeurs fictives de même format : saisissez les vôtres dans
+ * l'onglet Paramètres. Le cachet n'est volontairement pas reproduit : chaque société
+ * importe le sien.
+ */
+(function (racine, fabrique) {
+  const api = fabrique();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else racine.Exemple = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const DESCRIPTION = [
+    '# 1) : Ventes',
+    'Gestion des ventes : devis, commandes, factures, acomptes, avoirs',
+    'Suivi des clients',
+    'Règlement clients (partiel, global)',
+    'Gestion et suivi du portefeuille',
+    'Échéancier client',
+    'Factures non apurées et risque clients',
+    'Gestion des impayés',
+    'Transfert comptable',
+    '# 2) : Achats et stocks (commandes fournisseurs et réapprovisionnement)',
+    'Gestion des bons de réception',
+    'Gestion des factures d’achat',
+    'Gestion des avoirs fournisseurs',
+    'Suivi des fournisseurs',
+    'Règlement fournisseurs',
+    'Engagement fournisseurs / Banque, date d’échéance',
+    '# 3) : Stock',
+    'Gestion des entrées et des sorties',
+    'Suivi périodique du stock',
+    'Stock physique',
+    'Valeur du stock',
+    'Mouvement détaillé du produit (date, numéro de pièce)',
+    '# 4) : Statistiques détaillées',
+  ].join('\n');
+
+  const NB_TEXTE = [
+    '-L’élaboration des programmes de traitement correspondants',
+    '-La formation du personnel appelé à exploiter les nouveaux programmes',
+    '-L’encadrement du personnel utilisateur dans la phase de démarrage.',
+  ].join('\n');
+
+  return {
+    societe: {
+      nom: 'SOCIÉTÉ EXEMPLE INFORMATIQUE',
+      adresse: 'Rue de l\u2019Exemple, Ariana',
+      mf: '1234567/A/A/M/000',
+      tel: '70 000 000',
+      rc: 'B000000000',
+      email: '',
+      rib: '',
+    },
+    parametres: { tvaDefaut: 7, nbTitre: 'cette offre comporte', nbTexte: NB_TEXTE },
+    client: { code: '9999', nom: 'CLIENT EXEMPLE', adresse: 'RADES', mf: '' },
+    article: {
+      ref: 'GCI', titre: 'Gestion Commerciale Intégrée', description: DESCRIPTION, prixHT: 1500, tva: 7,
+    },
+    // le compteur 2026 des proformas est à 18 : le document reçoit le n° 260019/26
+    compteur: { cle: 'proforma-2026', valeur: 18 },
+    document: {
+      type: 'proforma',
+      date: '2026-10-14',
+      bonLivraison: '',
+      client: { code: '9999', nom: 'CLIENT EXEMPLE', adresse: 'RADES', mf: '' },
+      lignes: [{ titre: 'Gestion Commerciale Intégrée', description: DESCRIPTION, qte: 1, prixHT: 1500, remise: 0, tva: 7 }],
+      nbTitre: 'cette offre comporte',
+      nbTexte: NB_TEXTE,
+      options: { qte: false, remise: false, ttc: true, lettres: true, timbre: false, cachet: true },
+    },
+  };
+});
+</script>
+  <script>
+/* Facturier — logique de l'interface */
+(function () {
+  'use strict';
+
+  const C = window.Calculs;
+  const R = window.Rendu;
+  const S = window.Stockage;
+  const P = window.Persistance;
+  const EX = window.Exemple;
+
+  const $ = (sel, el) => (el || document).querySelector(sel);
+  const $$ = (sel, el) => Array.from((el || document).querySelectorAll(sel));
+  const esc = R.esc;
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const VISIONNEUSE = P.dansVisionneuse();
+
+  function aujourdhui() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  function lireChemin(obj, chemin) {
+    return chemin.split('.').reduce((o, k) => (o === null || o === undefined ? undefined : o[k]), obj);
+  }
+  function ecrireChemin(obj, chemin, valeur) {
+    const cles = chemin.split('.');
+    const derniere = cles.pop();
+    const cible = cles.reduce((o, k) => {
+      if (typeof o[k] !== 'object' || o[k] === null) o[k] = {};
+      return o[k];
+    }, obj);
+    cible[derniere] = valeur;
+  }
+  function saisieNombre(n) {
+    return String(C.lireNombre(n)).replace('.', ',');
+  }
+  function preference(cle, valeur) {
+    try {
+      if (valeur === undefined) return localStorage.getItem(`facturier:${cle}`);
+      localStorage.setItem(`facturier:${cle}`, valeur);
+    } catch (e) { /* préférence non conservée */ }
+    return null;
+  }
+
+  // ======================================================================
+  // État
+  // ======================================================================
+  let moteur = null;
+  let etat = S.etatInitial();
+  let doc = null;
+  let modifie = false;
+  let pret = false;
+
+  function toast(message, genre) {
+    const el = document.createElement('div');
+    el.className = `toast ${genre || ''}`;
+    el.textContent = message;
+    $('#toasts').appendChild(el);
+    setTimeout(() => el.classList.add('sortie'), genre === 'erreur' ? 5200 : 3200);
+    setTimeout(() => el.remove(), genre === 'erreur' ? 5700 : 3700);
+  }
+
+  function persister() {
+    if (!pret || !moteur) return;
+    if (!moteur.enregistrer(etat)) {
+      toast("Enregistrement impossible dans le navigateur (espace plein ?). Exportez une sauvegarde.", 'erreur');
+    }
+  }
+
+  function erreurStockage(e) {
+    const code = e && e.code;
+    if (code === 'quota_exceeded') toast("L'espace de stockage est plein : supprimez d'anciens documents ou des images.", 'erreur');
+    else if (code === 'revoked' || code === 'not_granted') toast("L'accès à vos données a été retiré : les modifications ne sont plus enregistrées.", 'erreur');
+    else toast("Une modification n'a pas pu être enregistrée. Vérifiez la connexion ; elle sera renvoyée à la prochaine modification.", 'erreur');
+  }
+
+  let minuterieBrouillon = null;
+  function sauverBrouillon() {
+    clearTimeout(minuterieBrouillon);
+    minuterieBrouillon = setTimeout(() => {
+      etat.brouillon = { doc, modifie };
+      persister();
+    }, 400);
+  }
+
+  function estEnregistre(d) {
+    return etat.documents.some((x) => x.id === d.id);
+  }
+
+  function majEtatDoc() {
+    const el = $('#etat-doc');
+    const t = R.TYPES[doc.type] || R.TYPES.proforma;
+    $('#titre-doc').textContent = `${t.libelle} n° ${doc.numero || '—'}${doc.client.nom ? ' · ' + doc.client.nom : ''}`;
+    if (!estEnregistre(doc)) {
+      el.textContent = 'Brouillon';
+      el.className = 'etat modifie';
+    } else if (modifie) {
+      el.textContent = 'Modifié';
+      el.className = 'etat modifie';
+    } else {
+      el.textContent = 'Enregistré';
+      el.className = 'etat';
+    }
+  }
+
+  function marquerModifie(valeur) {
+    modifie = valeur !== false;
+    majEtatDoc();
+    sauverBrouillon();
+  }
+
+  // ======================================================================
+  // Boîte de confirmation (les dialogues du navigateur sont bloqués dans une page Claude)
+  // ======================================================================
+  function demander(message, options) {
+    const o = Object.assign({ ok: 'Confirmer', annuler: 'Annuler', danger: false }, options || {});
+    return new Promise((resoudre) => {
+      const fond = $('#dialogue');
+      const bOk = $('#dialogue-ok');
+      const bAnnuler = $('#dialogue-annuler');
+      $('#dialogue-message').textContent = message;
+      bOk.textContent = o.ok;
+      bOk.className = o.danger ? 'danger-plein' : 'primaire';
+      bAnnuler.textContent = o.annuler;
+      const focusAvant = document.activeElement;
+      fond.hidden = false;
+      bOk.focus();
+      function fin(v) {
+        fond.hidden = true;
+        bOk.onclick = null;
+        bAnnuler.onclick = null;
+        fond.onclick = null;
+        document.removeEventListener('keydown', clavier, true);
+        if (focusAvant && focusAvant.focus) focusAvant.focus();
+        resoudre(v);
+      }
+      function clavier(e) {
+        if (e.key === 'Escape') { e.preventDefault(); fin(false); }
+      }
+      bOk.onclick = () => fin(true);
+      bAnnuler.onclick = () => fin(false);
+      fond.onclick = (e) => { if (e.target === fond) fin(false); };
+      document.addEventListener('keydown', clavier, true);
+    });
+  }
+
+  // ======================================================================
+  // Numérotation
+  // ======================================================================
+  function cleCompteur(type, date) {
+    return `${type}-${C.annee(date)}`;
+  }
+  function prochainSeq(type, date) {
+    return (parseInt(etat.compteurs[cleCompteur(type, date)], 10) || 0) + 1;
+  }
+  function numeroAutomatique() {
+    if (!doc || !doc.numeroAuto) return;
+    doc.seq = prochainSeq(doc.type, doc.date);
+    doc.numero = C.formaterNumero(etat.parametres.modeles[doc.type] || '{N:4}', doc.seq, doc.date);
+    const champ = $('#onglet-document [data-champ="numero"]');
+    if (champ) champ.value = doc.numero;
+  }
+
+  // ======================================================================
+  // Documents
+  // ======================================================================
+  function ligneVide() {
+    return { titre: '', description: '', qte: 1, prixHT: 0, remise: 0, tva: C.lireNombre(etat.parametres.tvaDefaut) };
+  }
+
+  function nouveauDocument(type) {
+    const p = etat.parametres;
+    const t = type || 'proforma';
+    return {
+      id: S.uid(),
+      type: t,
+      numero: '',
+      numeroAuto: true,
+      seq: null,
+      date: aujourdhui(),
+      bonLivraison: '',
+      client: { code: '', nom: '', adresse: '', mf: '' },
+      lignes: [ligneVide()],
+      nbTitre: t === 'facture' ? '' : p.nbTitre,
+      nbTexte: t === 'facture' ? '' : p.nbTexte,
+      options: Object.assign({}, R.OPTIONS_DEFAUT, { timbre: t === 'facture' }),
+      creeLe: null,
+      modifieLe: null,
+    };
+  }
+
+  function ouvrir(d, estModifie) {
+    doc = clone(d);
+    doc.options = Object.assign({}, R.OPTIONS_DEFAUT, doc.options || {});
+    doc.client = Object.assign({ code: '', nom: '', adresse: '', mf: '' }, doc.client || {});
+    doc.lignes = Array.isArray(doc.lignes) ? doc.lignes : [];
+    if (doc.numeroAuto) numeroAutomatique();
+    remplirFormulaire();
+    rendreLignes();
+    majApercu();
+    marquerModifie(!!estModifie);
+  }
+
+  function confirmerAbandon() {
+    if (!modifie) return Promise.resolve(true);
+    return demander('Le document en cours contient des modifications non enregistrées. Les abandonner ?',
+      { ok: 'Abandonner les modifications', danger: true });
+  }
+
+  async function enregistrer(silencieux) {
+    doc.numero = String(doc.numero || '').trim();
+    if (!doc.numero) {
+      toast('Indiquez un numéro de document avant d’enregistrer.', 'erreur');
+      montrerOnglet('document');
+      return false;
+    }
+    const t = R.TYPES[doc.type];
+    const doublon = etat.documents.find((d) => d.id !== doc.id && d.type === doc.type && d.numero === doc.numero);
+    if (doublon && !(await demander(`Le numéro ${doc.numero} est déjà utilisé par un autre document (${t.libelle}). Enregistrer quand même ?`,
+      { ok: 'Enregistrer quand même' }))) {
+      return false;
+    }
+    const maintenant = new Date().toISOString();
+    doc.modifieLe = maintenant;
+    const i = etat.documents.findIndex((d) => d.id === doc.id);
+    if (doc.numeroAuto && doc.seq) {
+      const k = cleCompteur(doc.type, doc.date);
+      etat.compteurs[k] = Math.max(parseInt(etat.compteurs[k], 10) || 0, doc.seq);
+    }
+    doc.numeroAuto = false; // une fois enregistré, le numéro est figé
+    if (i < 0) {
+      doc.creeLe = maintenant;
+      etat.documents.unshift(clone(doc));
+    } else {
+      etat.documents[i] = clone(doc);
+    }
+    marquerModifie(false);
+    persister();
+    rendreParametres();
+    if (!silencieux) toast(`${t.libelle} ${doc.numero} ${doc.type === 'devis' ? 'enregistré' : 'enregistrée'}.`, 'succes');
+    return true;
+  }
+
+  function copierDocument(source, type) {
+    const copie = clone(source);
+    copie.id = S.uid();
+    copie.type = type || source.type;
+    copie.numero = '';
+    copie.numeroAuto = true;
+    copie.seq = null;
+    copie.date = aujourdhui();
+    copie.creeLe = null;
+    copie.modifieLe = null;
+    copie.options = Object.assign({}, R.OPTIONS_DEFAUT, source.options || {});
+    if (copie.type !== source.type) copie.options.timbre = copie.type === 'facture';
+    return copie;
+  }
+
+  // ======================================================================
+  // Fichiers : PDF et sauvegarde
+  // ======================================================================
+  async function proposerFichier(nom, donnees, typeMime) {
+    const telechargements = await P.capacite('downloads');
+    if (telechargements) {
+      try {
+        await telechargements.save({ filename: nom, data: donnees });
+        return true;
+      } catch (e) {
+        const code = e && e.code;
+        if (code === 'declined') return false;
+        if (code === 'rate_limited') toast('Une demande d’enregistrement est déjà ouverte. Réessayez dans un instant.', 'erreur');
+        else if (code === 'host_unavailable') toast('Cette application ne peut pas enregistrer de fichiers : ouvrez la page dans un navigateur ou sur un ordinateur.', 'erreur');
+        else toast('Le fichier n’a pas pu être enregistré.', 'erreur');
+        return false;
+      }
+    }
+    if (VISIONNEUSE) {
+      toast('Le téléchargement n’est pas disponible dans cette vue. Ouvrez la page dans un navigateur.', 'erreur');
+      return false;
+    }
+    const blob = donnees instanceof Blob ? donnees : new Blob([donnees], { type: typeMime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nom;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    return true;
+  }
+
+  async function telechargerPdf() {
+    if (!window.PdfFacture || !window.jspdf) {
+      toast('Le module PDF n’a pas pu se charger : vérifiez la connexion Internet puis rechargez la page.', 'erreur');
+      return;
+    }
+    if ((modifie || !estEnregistre(doc)) && !(await enregistrer(true))) return;
+    let octets;
+    try {
+      octets = window.PdfFacture.genererOctets(doc, etat.parametres);
+    } catch (e) {
+      toast(`Le PDF n'a pas pu être créé : ${e.message}`, 'erreur');
+      return;
+    }
+    const nom = `${R.nomFichier(doc)}.pdf`;
+    if (await proposerFichier(nom, octets, 'application/pdf')) toast(`PDF prêt : ${nom}`, 'succes');
+  }
+
+  // ======================================================================
+  // Formulaire du document
+  // ======================================================================
+  function remplirFormulaire() {
+    $$('#onglet-document [data-champ]:not([data-ligne])').forEach((el) => {
+      const v = lireChemin(doc, el.dataset.champ);
+      if (el.type === 'checkbox') el.checked = !!v;
+      else el.value = v === undefined || v === null ? '' : v;
+    });
+    $$('#onglet-document [data-mf]').forEach(verifierMF);
+    majChoixClient();
+    majChoixArticle();
+  }
+
+  function optionsTva(selectionne) {
+    const taux = etat.parametres.taux.slice();
+    const v = C.lireNombre(selectionne);
+    if (!taux.includes(v)) taux.push(v);
+    return taux.sort((a, b) => a - b)
+      .map((t) => `<option value="${t}"${t === v ? ' selected' : ''}>${esc(C.formatTaux(t))}</option>`).join('');
+  }
+
+  function rendreLignes() {
+    const liste = $('#liste-lignes');
+    if (!doc.lignes.length) {
+      liste.innerHTML = '<p class="vide">Aucune ligne. Ajoutez une ligne vide ou un article du catalogue.</p>';
+      majTotauxLignes();
+      return;
+    }
+    liste.innerHTML = doc.lignes.map((l, i) => `
+      <div class="carte-ligne" data-index="${i}">
+        <div class="carte-entete">
+          <strong>Ligne ${i + 1}</strong>
+          <span class="carte-boutons">
+            <button type="button" data-action="monter-ligne" data-index="${i}" title="Monter" aria-label="Monter la ligne ${i + 1}"${i === 0 ? ' disabled' : ''}>↑</button>
+            <button type="button" data-action="descendre-ligne" data-index="${i}" title="Descendre" aria-label="Descendre la ligne ${i + 1}"${i === doc.lignes.length - 1 ? ' disabled' : ''}>↓</button>
+            <button type="button" data-action="catalogue-ligne" data-index="${i}" title="Garder dans le catalogue pour la réutiliser">★ Catalogue</button>
+            <button type="button" class="danger" data-action="supprimer-ligne" data-index="${i}" title="Supprimer" aria-label="Supprimer la ligne ${i + 1}">✕</button>
+          </span>
+        </div>
+        <label>Titre (souligné)<input id="ligne-${i}-titre" data-ligne="${i}" data-champ="titre" value="${esc(l.titre)}" autocomplete="off" placeholder="Ex. Gestion Commerciale Intégrée"></label>
+        <label>Détail<textarea id="ligne-${i}-description" data-ligne="${i}" data-champ="description" rows="${Math.min(12, Math.max(3, String(l.description || '').split('\n').length + 1))}" placeholder="# 1) : Ventes&#10;Gestion des devis et factures&#10;Suivi des clients">${esc(l.description)}</textarea></label>
+        <div class="grille-4">
+          <label>Qté<input id="ligne-${i}-qte" data-ligne="${i}" data-champ="qte" data-type="nombre" inputmode="decimal" value="${esc(saisieNombre(l.qte === undefined ? 1 : l.qte))}"></label>
+          <label>Prix unitaire HT<input id="ligne-${i}-prix" data-ligne="${i}" data-champ="prixHT" data-type="nombre" inputmode="decimal" value="${esc(saisieNombre(l.prixHT))}"></label>
+          <label>Remise %<input id="ligne-${i}-remise" data-ligne="${i}" data-champ="remise" data-type="nombre" inputmode="decimal" value="${esc(saisieNombre(l.remise))}"></label>
+          <label>TVA<select id="ligne-${i}-tva" data-ligne="${i}" data-champ="tva" data-type="nombre">${optionsTva(l.tva)}</select></label>
+        </div>
+        <div class="total-ligne">Total HT : <strong data-total-ligne="${i}"></strong></div>
+      </div>`).join('');
+    majTotauxLignes();
+  }
+
+  function majTotauxLignes() {
+    const tot = R.totauxDocument(doc, etat.parametres);
+    $$('[data-total-ligne]').forEach((el) => {
+      const l = tot.lignes[+el.dataset.totalLigne];
+      el.textContent = l ? C.formatMontant(l.totalHT) : '';
+    });
+    const morceaux = [['Total HT', tot.totalHT], ['TVA', tot.totalTVA]];
+    if (doc.options.timbre) morceaux.push(['Timbre', tot.timbre]);
+    morceaux.push(['TTC', tot.totalTTC]);
+    $('#resume-totaux').innerHTML = morceaux
+      .map(([l, v], i) => `<span${i === morceaux.length - 1 ? ' class="fort"' : ''}>${l} <strong>${C.formatMontant(v)}</strong></span>`).join('');
+  }
+
+  function verifierMF(el) {
+    const r = C.validerMF(el.value);
+    el.classList.toggle('invalide', !r.valide);
+    const msg = el.parentElement && el.parentElement.querySelector('.message-mf');
+    if (msg) msg.textContent = r.valide ? '' : 'Format attendu : 7 chiffres/clé/code TVA/catégorie/000 (ex. 1234567/A/A/M/000)';
+  }
+
+  let apercuPlanifie = false;
+  function planifierApercu() {
+    if (apercuPlanifie) return;
+    apercuPlanifie = true;
+    requestAnimationFrame(() => {
+      apercuPlanifie = false;
+      majApercu();
+    });
+  }
+
+  function majApercu() {
+    $('#apercu').innerHTML = R.rendreDocument(doc, etat.parametres);
+    R.ajusterRemplissage($('#apercu .page'));
+    ajusterEchelle();
+    majTotauxLignes();
+    majEtatDoc();
+  }
+
+  function ajusterEchelle() {
+    const zone = $('#zone-apercu');
+    const page = $('#apercu .page');
+    if (!page) return;
+    const style = getComputedStyle(zone);
+    const dispo = zone.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    const echelle = Math.min(1, dispo / page.offsetWidth);
+    $('#apercu').style.transform = `scale(${echelle})`;
+    const conteneur = $('#apercu-echelle');
+    conteneur.style.width = `${page.offsetWidth * echelle}px`;
+    conteneur.style.height = `${page.offsetHeight * echelle}px`;
+  }
+
+  function changement() {
+    marquerModifie(true);
+    planifierApercu();
+  }
+
+  $('#onglet-document').addEventListener('input', (e) => {
+    const el = e.target;
+    const champ = el.dataset.champ;
+    if (!champ || !doc) return;
+    let v = el.type === 'checkbox' ? el.checked : el.value;
+    if (el.dataset.type === 'nombre') v = C.lireNombre(v);
+
+    if (el.dataset.ligne !== undefined) {
+      const ligne = doc.lignes[+el.dataset.ligne];
+      if (ligne) ligne[champ] = v;
+    } else {
+      ecrireChemin(doc, champ, v);
+      if (champ === 'numero') doc.numeroAuto = false;
+      if (champ === 'type') {
+        doc.options.timbre = v === 'facture';
+        $('#onglet-document [data-champ="options.timbre"]').checked = doc.options.timbre;
+      }
+      if ((champ === 'type' || champ === 'date') && !estEnregistre(doc)) numeroAutomatique();
+    }
+    if (el.hasAttribute('data-mf')) verifierMF(el);
+    changement();
+  });
+
+  // ======================================================================
+  // Listes déroulantes clients / articles
+  // ======================================================================
+  function majChoixClient() {
+    const clients = etat.clients.slice().sort((a, b) => String(a.nom).localeCompare(String(b.nom), 'fr'));
+    $('#choix-client').innerHTML = `<option value="">${clients.length ? '— Choisir un client enregistré —' : '— Aucun client enregistré —'}</option>` +
+      clients.map((c) => `<option value="${esc(c.id)}">${esc(c.code)} — ${esc(c.nom)}</option>`).join('');
+  }
+  function majChoixArticle() {
+    const articles = etat.articles.slice().sort((a, b) => String(a.titre).localeCompare(String(b.titre), 'fr'));
+    $('#choix-article').innerHTML = `<option value="">${articles.length ? '— Choisir dans le catalogue —' : '— Catalogue vide —'}</option>` +
+      articles.map((a) => `<option value="${esc(a.id)}">${esc(a.titre || a.ref)} — ${C.formatMontant(a.prixHT)}</option>`).join('');
+  }
+
+  function appliquerClient(c) {
+    doc.client = { code: c.code || '', nom: c.nom || '', adresse: c.adresse || '', mf: c.mf || '' };
+    remplirFormulaire();
+    changement();
+  }
+
+  $('#choix-client').addEventListener('change', (e) => {
+    const c = etat.clients.find((x) => x.id === e.target.value);
+    if (c) appliquerClient(c);
+    e.target.value = '';
+  });
+
+  function ligneDepuisArticle(a) {
+    return { titre: a.titre || '', description: a.description || '', qte: 1, prixHT: C.lireNombre(a.prixHT), remise: 0, tva: C.lireNombre(a.tva) };
+  }
+
+  function codeClientSuivant() {
+    const max = etat.clients.reduce((m, c) => {
+      const n = parseInt(c.code, 10);
+      return Number.isFinite(n) && n < 9999 ? Math.max(m, n) : m;
+    }, 0);
+    return String(max + 1).padStart(4, '0');
+  }
+
+  // ======================================================================
+  // Onglet Clients
+  // ======================================================================
+  function rendreClients() {
+    const filtre = $('#filtre-clients').value.trim().toLowerCase();
+    const liste = etat.clients
+      .filter((c) => !filtre || [c.code, c.nom, c.adresse, c.mf].join(' ').toLowerCase().includes(filtre))
+      .sort((a, b) => String(a.nom).localeCompare(String(b.nom), 'fr'));
+    $('#table-clients').innerHTML = liste.length ? `<div class="defilement"><table class="liste">
+      <thead><tr><th>Code</th><th>Nom</th><th>Adresse</th><th></th></tr></thead>
+      <tbody>${liste.map((c) => `<tr>
+        <td>${esc(c.code)}</td>
+        <td>${esc(c.nom)}${c.mf ? `<br><small>${esc(c.mf)}</small>` : ''}</td>
+        <td>${esc(c.adresse)}</td>
+        <td class="actions-ligne">
+          <button type="button" class="petit" data-action="client-utiliser" data-id="${esc(c.id)}">Utiliser</button>
+          <button type="button" class="petit" data-action="client-modifier" data-id="${esc(c.id)}">Modifier</button>
+          <button type="button" class="petit danger" data-action="client-supprimer" data-id="${esc(c.id)}" aria-label="Supprimer ${esc(c.nom)}">✕</button>
+        </td></tr>`).join('')}</tbody></table></div>`
+      : '<p class="vide">Aucun client. Remplissez le formulaire ci-dessus, ou utilisez « Enregistrer ce client » depuis un document.</p>';
+  }
+
+  function viderFormClient() {
+    ['cl-id', 'cl-code', 'cl-nom', 'cl-adresse', 'cl-mf', 'cl-tel'].forEach((id) => { $('#' + id).value = ''; });
+    $('#titre-form-client').textContent = 'Nouveau client';
+    verifierMF($('#cl-mf'));
+  }
+
+  async function enregistrerClient(donnees) {
+    const c = Object.assign({}, donnees);
+    if (!String(c.nom || '').trim()) {
+      toast('Indiquez le nom du client.', 'erreur');
+      return null;
+    }
+    if (!String(c.code || '').trim()) c.code = codeClientSuivant();
+    const memeCode = etat.clients.find((x) => x.code === c.code && x.id !== c.id);
+    if (memeCode) {
+      if (!c.id && await demander(`Le code ${c.code} appartient déjà à « ${memeCode.nom} ». Mettre à jour cette fiche client ?`, { ok: 'Mettre à jour' })) {
+        c.id = memeCode.id;
+      } else {
+        toast(`Le code client ${c.code} est déjà utilisé : choisissez-en un autre.`, 'erreur');
+        return null;
+      }
+    }
+    if (!c.id) c.id = S.uid();
+    const i = etat.clients.findIndex((x) => x.id === c.id);
+    if (i < 0) etat.clients.push(c);
+    else etat.clients[i] = Object.assign(etat.clients[i], c);
+    persister();
+    majChoixClient();
+    rendreClients();
+    return c;
+  }
+
+  // ======================================================================
+  // Onglet Catalogue
+  // ======================================================================
+  function rendreArticles() {
+    const filtre = $('#filtre-articles').value.trim().toLowerCase();
+    const liste = etat.articles
+      .filter((a) => !filtre || [a.ref, a.titre, a.description].join(' ').toLowerCase().includes(filtre))
+      .sort((a, b) => String(a.titre).localeCompare(String(b.titre), 'fr'));
+    $('#table-articles').innerHTML = liste.length ? `<div class="defilement"><table class="liste">
+      <thead><tr><th>Réf.</th><th>Titre</th><th>Prix HT</th><th>TVA</th><th></th></tr></thead>
+      <tbody>${liste.map((a) => `<tr>
+        <td>${esc(a.ref)}</td><td>${esc(a.titre)}</td>
+        <td class="montant">${C.formatMontant(a.prixHT)}</td><td>${esc(C.formatTaux(a.tva))}</td>
+        <td class="actions-ligne">
+          <button type="button" class="petit" data-action="article-ajouter" data-id="${esc(a.id)}">Ajouter</button>
+          <button type="button" class="petit" data-action="article-modifier" data-id="${esc(a.id)}">Modifier</button>
+          <button type="button" class="petit danger" data-action="article-supprimer" data-id="${esc(a.id)}" aria-label="Supprimer ${esc(a.titre || a.ref)}">✕</button>
+        </td></tr>`).join('')}</tbody></table></div>`
+      : '<p class="vide">Catalogue vide. Sur une ligne de document, le bouton « ★ Catalogue » l\'enregistre ici.</p>';
+  }
+
+  function viderFormArticle() {
+    ['ar-id', 'ar-ref', 'ar-titre', 'ar-description', 'ar-prix'].forEach((id) => { $('#' + id).value = ''; });
+    $('#ar-tva').innerHTML = optionsTva(etat.parametres.tvaDefaut);
+    $('#titre-form-article').textContent = 'Nouvel article ou service';
+  }
+
+  function enregistrerArticle(donnees) {
+    const a = Object.assign({}, donnees);
+    if (!String(a.titre || '').trim() && !String(a.ref || '').trim()) {
+      toast("Indiquez au moins un titre ou une référence pour l'article.", 'erreur');
+      return null;
+    }
+    if (!a.id) a.id = S.uid();
+    const i = etat.articles.findIndex((x) => x.id === a.id);
+    if (i < 0) etat.articles.push(a);
+    else etat.articles[i] = a;
+    persister();
+    majChoixArticle();
+    rendreArticles();
+    return a;
+  }
+
+  // ======================================================================
+  // Onglet Historique
+  // ======================================================================
+  function rendreDocuments() {
+    const filtre = $('#filtre-documents').value.trim().toLowerCase();
+    const liste = etat.documents
+      .filter((d) => !filtre || [d.numero, d.client && d.client.nom, d.client && d.client.code, (R.TYPES[d.type] || {}).libelle]
+        .join(' ').toLowerCase().includes(filtre))
+      .sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.numero).localeCompare(String(a.numero)));
+    $('#table-documents').innerHTML = liste.length ? `<div class="defilement"><table class="liste">
+      <thead><tr><th>Document</th><th>Date</th><th>Client</th><th>TTC</th><th></th></tr></thead>
+      <tbody>${liste.map((d) => `<tr class="${doc && d.id === doc.id ? 'courant' : ''}">
+        <td><span class="badge ${esc(d.type)}">${esc((R.TYPES[d.type] || {}).libelle || d.type)}</span><br>${esc(d.numero)}</td>
+        <td>${esc(C.formatDate(d.date))}</td>
+        <td>${esc(d.client && d.client.nom)}</td>
+        <td class="montant">${C.formatMontant(R.totauxDocument(d, etat.parametres).totalTTC)}</td>
+        <td class="actions-ligne">
+          <button type="button" class="petit" data-action="doc-ouvrir" data-id="${esc(d.id)}">Ouvrir</button>
+          <button type="button" class="petit" data-action="doc-dupliquer" data-id="${esc(d.id)}">Copier</button>
+          <button type="button" class="petit danger" data-action="doc-supprimer" data-id="${esc(d.id)}" aria-label="Supprimer ${esc(d.numero)}">✕</button>
+        </td></tr>`).join('')}</tbody></table></div>`
+      : '<p class="vide">Aucun document enregistré. Ils apparaissent ici dès que vous enregistrez ou téléchargez un PDF.</p>';
+  }
+
+  // ======================================================================
+  // Onglet Paramètres
+  // ======================================================================
+  function rendreParametres() {
+    const p = etat.parametres;
+    $$('#onglet-parametres [data-param]').forEach((el) => {
+      const cle = el.dataset.param;
+      if (cle === 'tvaDefaut') return;
+      const v = lireChemin(p, cle);
+      if (document.activeElement === el) return;
+      el.value = cle === 'taux' ? p.taux.join(', ') : cle === 'timbre' ? saisieNombre(v) : (v === undefined ? '' : v);
+    });
+    $('#param-tva-defaut').innerHTML = optionsTva(p.tvaDefaut);
+    const an = C.annee(doc ? doc.date : aujourdhui());
+    $('#libelle-compteurs').textContent = `Dernier numéro déjà utilisé en ${an} (le prochain document prendra ce nombre + 1) :`;
+    $$('#onglet-parametres [data-compteur]').forEach((el) => {
+      if (document.activeElement !== el) el.value = parseInt(etat.compteurs[`${el.dataset.compteur}-${an}`], 10) || 0;
+    });
+    ['logo', 'cachet'].forEach((k) => {
+      $('#vignette-' + k).innerHTML = p.societe[k] ? `<img src="${esc(p.societe[k])}" alt="">` : '<span class="aide">Aucune image</span>';
+    });
+    $$('#onglet-parametres [data-mf]').forEach(verifierMF);
+  }
+
+  $('#onglet-parametres').addEventListener('input', (e) => {
+    const el = e.target;
+    const p = etat.parametres;
+    if (el.dataset.param) {
+      const cle = el.dataset.param;
+      let v = el.value;
+      if (cle === 'taux') {
+        v = v.split(/[;,\s]+/).map((x) => x.trim()).filter(Boolean).map(C.lireNombre);
+        if (!v.length) return;
+        v = Array.from(new Set(v)).sort((a, b) => a - b);
+      } else if (cle === 'timbre' || cle === 'tvaDefaut') {
+        v = C.lireNombre(v);
+      }
+      ecrireChemin(p, cle, v);
+      if (cle === 'taux') {
+        $('#param-tva-defaut').innerHTML = optionsTva(p.tvaDefaut);
+        rendreLignes();
+      }
+      if (cle.startsWith('modeles.')) numeroAutomatique();
+      if (el.hasAttribute('data-mf')) verifierMF(el);
+    } else if (el.dataset.compteur) {
+      const an = C.annee(doc ? doc.date : aujourdhui());
+      etat.compteurs[`${el.dataset.compteur}-${an}`] = Math.max(0, parseInt(el.value, 10) || 0);
+      numeroAutomatique();
+    } else {
+      return;
+    }
+    persister();
+    planifierApercu();
+  });
+
+  /** Image réduite (PNG, transparence conservée) et assez légère pour être enregistrée. */
+  function lireImage(fichier) {
+    return new Promise((ok, ko) => {
+      if (!/^image\//.test(fichier.type)) {
+        ko(new Error("Le fichier choisi n'est pas une image (PNG ou JPEG)."));
+        return;
+      }
+      const lecteur = new FileReader();
+      lecteur.onerror = () => ko(new Error('Lecture du fichier impossible.'));
+      lecteur.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          let taille = 600;
+          let url = '';
+          do {
+            const r = Math.min(1, taille / Math.max(img.width, img.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(img.width * r));
+            canvas.height = Math.max(1, Math.round(img.height * r));
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            url = canvas.toDataURL('image/png');
+            taille = Math.round(taille * 0.75);
+          } while (url.length > 230000 && taille > 120);
+          if (url.length > 230000) ko(new Error('Image trop lourde : utilisez une image plus simple.'));
+          else ok(url);
+        };
+        img.onerror = () => ko(new Error('Image illisible.'));
+        img.src = lecteur.result;
+      };
+      lecteur.readAsDataURL(fichier);
+    });
+  }
+
+  $('#onglet-parametres').addEventListener('change', (e) => {
+    const el = e.target;
+    if (el.type !== 'file' || !el.dataset.image || !el.files[0]) return;
+    lireImage(el.files[0])
+      .then((url) => {
+        etat.parametres.societe[el.dataset.image] = url;
+        persister();
+        rendreParametres();
+        planifierApercu();
+        toast(el.dataset.image === 'logo' ? 'Logo enregistré.' : 'Cachet enregistré.', 'succes');
+      })
+      .catch((err) => toast(err.message, 'erreur'))
+      .finally(() => { el.value = ''; });
+  });
+
+  function chargerExemple() {
+    const p = etat.parametres;
+    Object.assign(p.societe, EX.societe);
+    Object.assign(p, EX.parametres);
+    if (!p.taux.includes(EX.article.tva)) p.taux = p.taux.concat(EX.article.tva).sort((a, b) => a - b);
+    if (!etat.clients.some((c) => c.code === EX.client.code)) etat.clients.push(Object.assign({ id: S.uid(), tel: '' }, EX.client));
+    if (!etat.articles.some((a) => a.ref === EX.article.ref)) etat.articles.push(Object.assign({ id: S.uid() }, EX.article));
+    etat.compteurs[EX.compteur.cle] = Math.max(parseInt(etat.compteurs[EX.compteur.cle], 10) || 0, EX.compteur.valeur);
+    persister();
+    ouvrir(Object.assign(nouveauDocument(EX.document.type), clone(EX.document)), true);
+    rendreParametres();
+  }
+
+  // ======================================================================
+  // Actions (boutons)
+  // ======================================================================
+  const ACTIONS = {
+    async nouveau() {
+      if (!(await confirmerAbandon())) return;
+      ouvrir(nouveauDocument($('#nouveau-type').value), false);
+      montrerOnglet('document');
+    },
+    enregistrer: () => enregistrer(false),
+    pdf: telechargerPdf,
+    imprimer() {
+      majApercu();
+      window.print();
+    },
+    async dupliquer() {
+      if (!(await confirmerAbandon())) return;
+      ouvrir(copierDocument(doc), true);
+      toast('Copie créée avec un nouveau numéro.', 'succes');
+    },
+    async convertir() {
+      if (doc.type === 'facture') {
+        toast('Ce document est déjà une facture.');
+        return;
+      }
+      if (!(await confirmerAbandon())) return;
+      const f = copierDocument(doc, 'facture');
+      f.bonLivraison = '';
+      ouvrir(f, true);
+      toast('Facture créée à partir du document : vérifiez-la puis téléchargez le PDF.', 'succes');
+    },
+    'numero-auto'() {
+      if (estEnregistre(doc)) {
+        toast('Le numéro d’un document enregistré ne change pas. Utilisez « Copier » pour en créer un nouveau.');
+        return;
+      }
+      doc.numeroAuto = true;
+      numeroAutomatique();
+      changement();
+    },
+    async 'memoriser-client'() {
+      const existant = etat.clients.find((c) => c.code && c.code === doc.client.code);
+      const c = await enregistrerClient(Object.assign({}, existant || {}, doc.client, { id: existant ? existant.id : undefined }));
+      if (c) {
+        if (c.code !== doc.client.code) {
+          doc.client.code = c.code;
+          remplirFormulaire();
+          changement();
+        }
+        toast(`Client ${c.code} — ${c.nom} enregistré.`, 'succes');
+      }
+    },
+    'ajouter-ligne'() {
+      doc.lignes.push(ligneVide());
+      rendreLignes();
+      changement();
+      const champs = $$('#liste-lignes [data-champ="titre"]');
+      if (champs.length) champs[champs.length - 1].focus();
+    },
+    'ajouter-article'() {
+      const a = etat.articles.find((x) => x.id === $('#choix-article').value);
+      if (!a) {
+        toast('Choisissez d’abord un article dans la liste.');
+        return;
+      }
+      doc.lignes.push(ligneDepuisArticle(a));
+      rendreLignes();
+      changement();
+    },
+    'monter-ligne'(b) {
+      const i = +b.dataset.index;
+      if (i <= 0) return;
+      [doc.lignes[i - 1], doc.lignes[i]] = [doc.lignes[i], doc.lignes[i - 1]];
+      rendreLignes();
+      changement();
+    },
+    'descendre-ligne'(b) {
+      const i = +b.dataset.index;
+      if (i >= doc.lignes.length - 1) return;
+      [doc.lignes[i + 1], doc.lignes[i]] = [doc.lignes[i], doc.lignes[i + 1]];
+      rendreLignes();
+      changement();
+    },
+    async 'supprimer-ligne'(b) {
+      const i = +b.dataset.index;
+      const l = doc.lignes[i];
+      if ((l.titre || l.description || C.lireNombre(l.prixHT))
+        && !(await demander(`Supprimer la ligne ${i + 1}${l.titre ? ` « ${l.titre} »` : ''} ?`, { ok: 'Supprimer', danger: true }))) return;
+      doc.lignes.splice(i, 1);
+      rendreLignes();
+      changement();
+    },
+    'catalogue-ligne'(b) {
+      const l = doc.lignes[+b.dataset.index];
+      const existant = etat.articles.find((a) => a.titre && a.titre === l.titre);
+      const a = enregistrerArticle({
+        id: existant ? existant.id : undefined,
+        ref: existant ? existant.ref : '',
+        titre: l.titre, description: l.description, prixHT: C.lireNombre(l.prixHT), tva: C.lireNombre(l.tva),
+      });
+      if (a) toast(existant ? 'Article du catalogue mis à jour.' : 'Ligne gardée dans le catalogue.', 'succes');
+    },
+
+    // --- clients
+    async 'client-enregistrer'() {
+      const c = await enregistrerClient({
+        id: $('#cl-id').value || undefined,
+        code: $('#cl-code').value.trim(),
+        nom: $('#cl-nom').value.trim(),
+        adresse: $('#cl-adresse').value.trim(),
+        mf: $('#cl-mf').value.trim(),
+        tel: $('#cl-tel').value.trim(),
+      });
+      if (c) {
+        viderFormClient();
+        toast('Client enregistré.', 'succes');
+      }
+    },
+    'client-vider': viderFormClient,
+    'client-utiliser'(b) {
+      const c = etat.clients.find((x) => x.id === b.dataset.id);
+      if (c) {
+        appliquerClient(c);
+        montrerOnglet('document');
+      }
+    },
+    'client-modifier'(b) {
+      const c = etat.clients.find((x) => x.id === b.dataset.id);
+      if (!c) return;
+      $('#cl-id').value = c.id;
+      $('#cl-code').value = c.code || '';
+      $('#cl-nom').value = c.nom || '';
+      $('#cl-adresse').value = c.adresse || '';
+      $('#cl-mf').value = c.mf || '';
+      $('#cl-tel').value = c.tel || '';
+      $('#titre-form-client').textContent = `Modifier le client ${c.code}`;
+      verifierMF($('#cl-mf'));
+      $('#cl-nom').focus();
+    },
+    async 'client-supprimer'(b) {
+      const c = etat.clients.find((x) => x.id === b.dataset.id);
+      if (!c || !(await demander(`Supprimer le client ${c.code} — ${c.nom} ? Les documents déjà créés ne changent pas.`, { ok: 'Supprimer', danger: true }))) return;
+      etat.clients = etat.clients.filter((x) => x.id !== c.id);
+      persister();
+      majChoixClient();
+      rendreClients();
+    },
+
+    // --- catalogue
+    'article-enregistrer'() {
+      const a = enregistrerArticle({
+        id: $('#ar-id').value || undefined,
+        ref: $('#ar-ref').value.trim(),
+        titre: $('#ar-titre').value.trim(),
+        description: $('#ar-description').value,
+        prixHT: C.lireNombre($('#ar-prix').value),
+        tva: C.lireNombre($('#ar-tva').value),
+      });
+      if (a) {
+        viderFormArticle();
+        toast('Article enregistré.', 'succes');
+      }
+    },
+    'article-vider': viderFormArticle,
+    'article-ajouter'(b) {
+      const a = etat.articles.find((x) => x.id === b.dataset.id);
+      if (!a) return;
+      doc.lignes.push(ligneDepuisArticle(a));
+      rendreLignes();
+      changement();
+      montrerOnglet('document');
+    },
+    'article-modifier'(b) {
+      const a = etat.articles.find((x) => x.id === b.dataset.id);
+      if (!a) return;
+      $('#ar-id').value = a.id;
+      $('#ar-ref').value = a.ref || '';
+      $('#ar-titre').value = a.titre || '';
+      $('#ar-description').value = a.description || '';
+      $('#ar-prix').value = saisieNombre(a.prixHT);
+      $('#ar-tva').innerHTML = optionsTva(a.tva);
+      $('#titre-form-article').textContent = `Modifier l'article ${a.ref || a.titre}`;
+      $('#ar-titre').focus();
+    },
+    async 'article-supprimer'(b) {
+      const a = etat.articles.find((x) => x.id === b.dataset.id);
+      if (!a || !(await demander(`Retirer « ${a.titre || a.ref} » du catalogue ?`, { ok: 'Retirer', danger: true }))) return;
+      etat.articles = etat.articles.filter((x) => x.id !== a.id);
+      persister();
+      majChoixArticle();
+      rendreArticles();
+    },
+
+    // --- historique
+    async 'doc-ouvrir'(b) {
+      const d = etat.documents.find((x) => x.id === b.dataset.id);
+      if (!d || !(await confirmerAbandon())) return;
+      ouvrir(d, false);
+      montrerOnglet('document');
+    },
+    async 'doc-dupliquer'(b) {
+      const d = etat.documents.find((x) => x.id === b.dataset.id);
+      if (!d || !(await confirmerAbandon())) return;
+      ouvrir(copierDocument(d), true);
+      montrerOnglet('document');
+    },
+    async 'doc-supprimer'(b) {
+      const d = etat.documents.find((x) => x.id === b.dataset.id);
+      if (!d) return;
+      const t = (R.TYPES[d.type] || {}).libelle;
+      if (!(await demander(`Supprimer définitivement « ${t} ${d.numero} » ?`, { ok: 'Supprimer', danger: true }))) return;
+      etat.documents = etat.documents.filter((x) => x.id !== d.id);
+      persister();
+      rendreDocuments();
+      if (doc && doc.id === d.id) marquerModifie(true);
+    },
+    async exporter() {
+      if (await proposerFichier(`facturier-sauvegarde-${aujourdhui()}.json`, S.exporter(etat), 'application/json')) {
+        toast('Sauvegarde exportée.', 'succes');
+      }
+    },
+    importer() {
+      $('#fichier-import').click();
+    },
+
+    // --- paramètres
+    'image-supprimer'(b) {
+      etat.parametres.societe[b.dataset.image] = '';
+      persister();
+      rendreParametres();
+      planifierApercu();
+    },
+    async 'charger-exemple'() {
+      if (!(await confirmerAbandon())) return;
+      chargerExemple();
+      toast("Exemple chargé : proforma 260019/26.", 'succes');
+    },
+    async reinitialiser() {
+      if (!(await demander('Effacer TOUTES les données (société, clients, catalogue, documents) ? Exportez une sauvegarde avant si vous voulez les garder.',
+        { ok: 'Tout effacer', danger: true }))) return;
+      etat = S.etatInitial();
+      persister();
+      modifie = false;
+      ouvrir(nouveauDocument('proforma'), false);
+      rendreParametres();
+      rendreClients();
+      rendreArticles();
+      rendreDocuments();
+      toast('Toutes les données ont été effacées.');
+    },
+    'masquer-guide'() {
+      $('#guide').hidden = true;
+      preference('guide', 'masque');
+    },
+  };
+
+  document.addEventListener('click', (e) => {
+    const lien = e.target.closest('[data-aller]');
+    if (lien) {
+      e.preventDefault();
+      montrerOnglet(lien.dataset.aller);
+      return;
+    }
+    const b = e.target.closest('[data-action]');
+    if (!b || b.disabled || !pret) return;
+    const action = ACTIONS[b.dataset.action];
+    if (action) {
+      e.preventDefault();
+      Promise.resolve(action(b)).catch((err) => toast(`Erreur : ${err && err.message ? err.message : err}`, 'erreur'));
+    }
+  });
+
+  $('#fichier-import').addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    f.text().then(async (texte) => {
+      let nouvel;
+      try {
+        nouvel = S.importer(texte);
+      } catch (err) {
+        toast('Ce fichier n’est pas une sauvegarde du Facturier.', 'erreur');
+        return;
+      }
+      const n = nouvel.documents.length;
+      if (!(await demander(`Remplacer toutes les données actuelles par cette sauvegarde (${n} document${n > 1 ? 's' : ''}, ${nouvel.clients.length} client${nouvel.clients.length > 1 ? 's' : ''}) ?`,
+        { ok: 'Remplacer', danger: true }))) return;
+      etat = nouvel;
+      persister();
+      modifie = false;
+      ouvrir(etat.documents[0] ? etat.documents[0] : nouveauDocument('proforma'), false);
+      rendreParametres();
+      rendreDocuments();
+      toast('Sauvegarde importée.', 'succes');
+    }).catch(() => toast('Lecture du fichier impossible.', 'erreur'));
+  });
+
+  ['clients', 'articles', 'documents'].forEach((k) => {
+    $(`#filtre-${k}`).addEventListener('input', () => ({ clients: rendreClients, articles: rendreArticles, documents: rendreDocuments })[k]());
+  });
+  $$('[data-mf]').forEach((el) => el.addEventListener('input', () => verifierMF(el)));
+
+  // ======================================================================
+  // Onglets
+  // ======================================================================
+  function montrerOnglet(nom) {
+    $$('.onglets button').forEach((b) => {
+      const actif = b.dataset.onglet === nom;
+      b.classList.toggle('actif', actif);
+      b.setAttribute('aria-selected', String(actif));
+    });
+    $$('.panneau').forEach((p) => p.classList.toggle('actif', p.id === `onglet-${nom}`));
+    if (nom === 'clients') rendreClients();
+    if (nom === 'catalogue') rendreArticles();
+    if (nom === 'historique') rendreDocuments();
+    if (nom === 'parametres') rendreParametres();
+    const editeur = $('.editeur');
+    if (editeur) editeur.scrollTop = 0;
+  }
+  $$('.onglets button').forEach((b) => b.addEventListener('click', () => montrerOnglet(b.dataset.onglet)));
+
+  // ======================================================================
+  // Impression, raccourcis, fermeture
+  // ======================================================================
+  let titreAvantImpression = document.title;
+  window.addEventListener('beforeprint', () => {
+    titreAvantImpression = document.title;
+    if (doc) document.title = R.nomFichier(doc);
+  });
+  window.addEventListener('afterprint', () => { document.title = titreAvantImpression; });
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      if (pret) enregistrer(false);
+    }
+  });
+  window.addEventListener('beforeunload', () => {
+    if (!modifie || !pret) return;
+    clearTimeout(minuterieBrouillon);
+    etat.brouillon = { doc, modifie };
+    persister();
+  });
+  if (window.ResizeObserver) new ResizeObserver(ajusterEchelle).observe($('#zone-apercu'));
+  else window.addEventListener('resize', ajusterEchelle);
+
+  // ======================================================================
+  // Démarrage
+  // ======================================================================
+  const LIBELLES_STOCKAGE = {
+    compte: ['Enregistré dans votre compte', 'Vos documents sont privés et retrouvés sur tous vos appareils.'],
+    local: ['Enregistré dans ce navigateur', 'Exportez une sauvegarde de temps en temps (onglet Historique).'],
+    memoire: ['Non enregistré', 'Ce navigateur bloque l’enregistrement : exportez une sauvegarde avant de fermer.'],
+  };
+
+  async function demarrer() {
+    if (VISIONNEUSE) $('[data-action="imprimer"]').hidden = true;
+    viderFormArticle();
+    let resultat;
+    try {
+      resultat = await P.ouvrir(erreurStockage);
+    } catch (e) {
+      resultat = { moteur: { mode: 'memoire', enregistrer: () => true }, etat: null, avertissement: '' };
+    }
+    moteur = resultat.moteur;
+    const charge = resultat.etat;
+    etat = charge || S.etatInitial();
+    pret = true;
+
+    const [libelle, detail] = LIBELLES_STOCKAGE[moteur.mode] || LIBELLES_STOCKAGE.memoire;
+    const badge = $('#mode-stockage');
+    badge.textContent = libelle;
+    badge.title = detail;
+    badge.className = `stockage ${moteur.mode}`;
+    if (resultat.avertissement || moteur.mode === 'memoire') {
+      $('#alerte-stockage').textContent = resultat.avertissement || detail;
+      $('#alerte-stockage').hidden = false;
+    }
+
+    if (!charge) {
+      chargerExemple();
+    } else if (etat.brouillon && etat.brouillon.doc) {
+      ouvrir(etat.brouillon.doc, !!etat.brouillon.modifie);
+    } else {
+      ouvrir(nouveauDocument('proforma'), false);
+    }
+    rendreParametres();
+    if (preference('guide') !== 'masque') $('#guide').hidden = false;
+    $('#chargement').hidden = true;
+    document.body.classList.add('pret');
+  }
+
+  demarrer();
+})();
+</script>

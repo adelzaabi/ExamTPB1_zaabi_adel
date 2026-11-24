@@ -4,6 +4,7 @@
   "private": true,
   "description": "Factures proforma, devis et factures au format tunisien (HTML/JS, sans dépendance)",
   "scripts": {
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "construire": "node outils/construire.js"
   }
 }
